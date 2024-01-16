@@ -1,6 +1,7 @@
 #* @apiTitle STAC API
 #* @apiDescription R STAC API server.
 #* @apiVersion 1.0.0
+api_version <- "1.0.0"
 
 #* Landing page
 #* @get /
