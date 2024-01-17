@@ -52,22 +52,7 @@ function() {
 #* @get /collections
 #* @serializer unboxedJSON
 function() {
-  data <- get_collections(api)
-  data <- lapply(data, update_collection_links, api = api)
-  data <- list(
-    collections = unname(data),
-    links = list(
-      new_link(
-        rel = "root",
-        href = get_endpoint(api, "/")
-      ),
-      new_link(
-        rel = "self",
-        href = get_endpoint(api, "/collections")
-      )
-    )
-  )
-  data
+  get_collections(api)
 }
 
 #* Collection endpoint
@@ -75,8 +60,7 @@ function() {
 #* @param collection_id The ID of the collection
 #* @serializer unboxedJSON
 function(collection_id) {
-  collection <- get_collection(api, collection_id)
-  update_collection_links(collection, api)
+  get_collection(api, collection_id)
 }
 
 #* Items endpoint
