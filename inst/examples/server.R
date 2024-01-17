@@ -4,12 +4,10 @@ library(stacserver)
 api <- create_api(
   id = "stac-api",
   title = "R STAC API server",
-  description = "This is a compliant STAC API 1.0.0 R backend."
+  description = "This is a STAC API 1.0.0 compliant R backend."
 )
 
 # Load collections
-collections <- jsonlite::read_json(
-  path = system.file("sits/collections.json", package = "openeocraft"),
-  auto_unbox = TRUE
-)
-load_collections(api, collections = collections)
+local_file <- "collections.rds"
+set_db(api, driver = "local", file = local_file)
+load_collections(api)

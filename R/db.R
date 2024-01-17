@@ -17,6 +17,35 @@ get_db <- function(api) {
   get_attr(api, "db")
 }
 
+new_link <- function(rel, href, ...) {
+  dots <- list(...)
+  c(list(rel = rel, href = href), dots)
+}
+
+update_collection_links <- function(collection, api) {
+  collection$links <- list(
+    new_link(
+      rel = "root",
+      href = get_endpoint(api, "/")
+    ),
+    new_link(
+      rel = "self",
+      href = get_endpoint(
+        api,
+        paste("/collections", collection$id, sep = "/")
+      )
+    ),
+    new_link(
+      rel = "item",
+      href = get_endpoint(
+        api,
+        paste("/collections", collection$id, "items", sep = "/")
+      )
+    )
+  )
+  collection
+}
+
 load_collections <- function(api) {
   db <- get_db(api)
   stopifnot(!is.null(db))
@@ -45,17 +74,40 @@ new_connection.local <- function(driver, file, ...) {
   )
 }
 
+new_collection.local <- function(api, collection) {
+  data <- get_attr(api, "collections")
+  if (is.null(data)) data <- list()
+  data[[collection$id]] <- collection
+  set_attr(api, "collections", data)
+}
+
+save_collections.local <- function(api) {
+  connection <- get_db(api)
+  file <- connection$file
+  stopifnot(!is.null(file))
+  data <- get_attr(api, "collections")
+  stopifnot(!is.null(data))
+  saveRDS(data, file)
+}
+
 load_collections.local <- function(api) {
   connection <- get_db(api)
   file <- connection$file
+  stopifnot(!is.null(file))
   stopifnot(file.exists(file))
-  set_attr(api, "collections", readRDS(file))
+  data <- readRDS(file)
+  set_attr(api, "collections", data)
 }
 
 get_collections.local <- function(api) {
-
+  data <- get_attr(api, "collections")
+  stopifnot(!is.null(data))
+  data
 }
 
 get_collection.local <- function(api, collection_id) {
-
+  data <- get_attr(api, "collections")
+  stopifnot(!is.null(data))
+  stopifnot(collection_id %in% names(data))
+  data[[collection_id]]
 }

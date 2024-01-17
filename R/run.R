@@ -6,7 +6,7 @@ create_api <- function(id, title, description) {
       id = id,
       title = title,
       description = description,
-      api_version = api_version
+      stac_version = stac_version
     ),
     class = c(id, "stac_api"),
     env = new.env(hash = TRUE, parent = parent.frame())
