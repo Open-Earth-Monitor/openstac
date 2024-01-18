@@ -10,6 +10,6 @@ list_endpoints <- function(api) {
   })
 }
 
-get_endpoint <- function(api, path) {
-  paste0(get_scheme(api), "://", get_host(api), ":", get_port(api), path)
+get_endpoint <- function(api, ...) {
+  paste0(get_scheme(api), "://", get_host(api), ":", get_port(api), ...)
 }

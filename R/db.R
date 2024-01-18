@@ -22,13 +22,23 @@ get_collection <- function(api, collection_id) {
   UseMethod("get_collection", db)
 }
 
+get_items <- function(api, collection_id, limit, bbox, datetime) {
+  db <- get_db(api)
+  UseMethod("get_items", db)
+}
+
+get_item <- function(api, collection_id, item_id) {
+  db <- get_db(api)
+  UseMethod("get_item", db)
+}
+
 new_link <- function(rel, href, ...) {
   dots <- list(...)
   c(list(rel = rel, href = href), dots)
 }
 
-update_collection_links <- function(collection, api) {
-  collection$links <- list(
+update_collection_links <- function(data, api) {
+  data$links <- list(
     new_link(
       rel = "root",
       href = get_endpoint(api, "/")
@@ -37,16 +47,66 @@ update_collection_links <- function(collection, api) {
       rel = "self",
       href = get_endpoint(
         api,
-        paste("/collections", collection$id, sep = "/")
+        paste("/collections", data$id, sep = "/")
       )
     ),
     new_link(
       rel = "item",
       href = get_endpoint(
         api,
-        paste("/collections", collection$id, "items", sep = "/")
+        paste("/collections", data$id, "items", sep = "/")
       )
     )
   )
-  collection
+  data
+}
+
+update_collections_links <- function(data, api) {
+  data$links <- list(
+    new_link(
+      rel = "root",
+      href = get_endpoint(api, "/")
+    ),
+    new_link(
+      rel = "self",
+      href = get_endpoint(api, "/collections")
+    )
+  )
+  data
+}
+
+update_item_links <- function(data, api, collection_id) {
+  data$links <- list(
+    new_link(
+      rel = "root",
+      href = get_endpoint(api, "/")
+    ),
+    new_link(
+      rel = "self",
+      href = get_endpoint(api, "/collections")
+    ),
+    new_link(
+      rel = "collection",
+      href = get_endpoint(api, "/collections", collection_id)
+    )
+  )
+  data
+}
+
+update_items_links <- function(data, api, collection_id) {
+  data$links <- list(
+    new_link(
+      rel = "root",
+      href = get_endpoint(api, "/")
+    ),
+    new_link(
+      rel = "self",
+      href = get_endpoint(api, "/collections")
+    ),
+    new_link(
+      rel = "collection",
+      href = get_endpoint(api, "/collections", collection_id)
+    )
+  )
+  data
 }

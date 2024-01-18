@@ -66,11 +66,12 @@ function(collection_id) {
 #* Items endpoint
 #* @get /collections/<collection_id>/items
 #* @param collection_id The ID of the collection
+#* @param limit Maximum number of features to return
 #* @param bbox Bounding box (minx,miny,maxx,maxy)
 #* @param datetime Datetime filter
 #* @serializer unboxedJSON
-function(collection_id, bbox, datetime) {
-  # Add implementation code here
+function(collection_id, limit, bbox, datetime) {
+  get_items(api, collection_id, limit, bbox, datetime)
 }
 
 #* Item endpoint
@@ -79,15 +80,19 @@ function(collection_id, bbox, datetime) {
 #* @param item_id The ID of the item
 #* @serializer unboxedJSON
 function(collection_id, item_id) {
-  # Add implementation code here
+  get_item(api, collection_id, item_id)
 }
 
 #* Search endpoint
 #* @get /search
 #* @param collection_ids The list of collections' ID
+#* @param limit Maximum number of features to return
 #* @param bbox Bounding box (minx,miny,maxx,maxy)
 #* @param datetime Datetime filter
+#* @param intersects Maximum number of features to return
+#* @param ids Array of items ID to return
+#* @param collections Array of collection ID
 #* @serializer unboxedJSON
-function(collection_ids, bbox, datetime) {
+function(limit, bbox, datetime, intersects, ids, collections) {
   # Add implementation code here
 }
