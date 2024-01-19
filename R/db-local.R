@@ -39,18 +39,35 @@ item_before <- function(date) {
   \(item) as.Date(item$datetime) <= date
 }
 
-# TODO: resume from here
-get_geometry <- function(item) {
-  item$geometry$coordinates
+as_bbox <- function(x) {
+  coords <- matrix(
+    unlist(x)[c(1, 3, 3, 1, 1, 2, 2, 4, 4, 2)],
+    ncol = 2, byrow = FALSE
+  )
+  sf::st_sfc(structure(
+    list(structure(c(coords), dim = dim(coords))),
+    class = c("XY", "POLYGON", "sfg")
+  ), crs = 4326)
 }
 
-# TODO: resume from here
-item_intersects <- function(bbox) {
-  xmin <- bbox[[1]]
-  ymin <- bbox[[2]]
-  xmax <- bbox[[3]]
-  ymax <- bbox[[4]]
-  \(item) item
+get_geometry <- function(items) {
+  if ("features" %in% names(items))
+    return(sf::st_sfc(lapply(items$features, get_geometry), crs = 4326))
+  stopifnot(items$geometry$type == "Polygon")
+  structure(
+    lapply(items$geometry$coordinates, \(x){
+      coords <- matrix(unlist(x), ncol = 2, byrow = TRUE)
+      structure(c(coords), dim = dim(coords))
+    }),
+    class = c("XY", "POLYGON", "sfg")
+  )
+}
+
+items_intersects <- function(items, geom) {
+  geometries <- get_geometry(items)
+  select <- apply(sf::st_intersects(geometries, geom), 1, length) > 0
+  items$features <- items$features[select]
+  items
 }
 
 get_items.local <- function(api, collection_id, limit, bbox, datetime) {
@@ -86,8 +103,7 @@ get_items.local <- function(api, collection_id, limit, bbox, datetime) {
   if (!is.null(bbox)) {
     stopifnot(is.numeric(bbox))
     stopifnot(length(bbox) == 4)
-    # ...do spatial filtering
-    # TODO: resume from here
+    items <- items_intersects(items, as_bbox(bbox))
   }
   # update links and return
   items$features <- items$features[seq_len(limit)]

@@ -3,17 +3,27 @@ library(rstac)
 collection <- rstac::stac_read("https://s3.eu-central-1.wasabisys.com/stac/openlandmap/wv_mcd19a2v061.seasconv/collection.json")
 items <- rstac::read_items(collection, limit = 1000, page = 1)
 # ...fix latlong -> longlat
-fix_longlat <- function(feat) {
-  feat$geometry$coordinates[[1]] <-
-    lapply(feat$geometry$coordinates[[1]], function(coord) {
+fix_longlat <- function(item) {
+  item$bbox <- item$bbox[c(2, 1, 4, 3)]
+  item$geometry$coordinates[[1]] <-
+    lapply(item$geometry$coordinates[[1]], function(coord) {
       coord[c(2, 1)]
     })
-  feat
+  item
 }
 items2 <- items
 items2$features <- lapply(items$features, fix_longlat)
 items2$features[[1]]$geometry
 items$features[[1]]$geometry
+
+data <- structure(
+  lapply(items2$features[[1]]$geometry$coordinates, \(x){
+    coords <- matrix(unlist(x), ncol = 2, byrow = TRUE)
+    structure(c(coords), dim = dim(coords))
+  }),
+  class = c("XY", "POLYGON", "sfg")
+)
+dput(data)
 
 # filter by item_id
 items_filter(items2, id == "wv_mcd19a2v061.seasconv_20220701_20220731")$features[[1]]
