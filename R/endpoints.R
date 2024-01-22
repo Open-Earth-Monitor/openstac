@@ -10,6 +10,18 @@ list_endpoints <- function(api) {
   })
 }
 
-get_endpoint <- function(api, ...) {
-  paste0(get_scheme(api), "://", get_host(api), ":", get_port(api), ...)
+get_endpoint <- function(...) {
+  dots <- c(...)
+  segments <- unname(dots)
+  params <- NULL
+  if (!is.null(names(dots))) {
+    segments <- unname(dots[names(dots) == ""])
+    params <- dots[names(dots) != ""]
+  }
+  host <- paste0(get_scheme(api), "://", get_host(api), ":", get_port(api))
+  path <- paste0(segments, collapse = "/")
+  query <- paste(names(params), unname(params), sep = "=", collapse = "&")
+  href <- paste0(host, path)
+  if (query != "") href <- paste0(href, "?", query)
+  href
 }

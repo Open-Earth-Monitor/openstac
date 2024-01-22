@@ -61,3 +61,12 @@ run_api <- function(api, host = "http://127.0.0.1", port = 8000) {
   set_attr(api, "port", port)
   start_api(api, envir = environment())
 }
+
+get_landing_page <- function() {
+  data <- list(
+    type = "Catalog",
+    conformsTo = conforms_to
+  )
+  data <- c(api, data)
+  update_catalog_links(data)
+}
