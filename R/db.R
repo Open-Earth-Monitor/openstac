@@ -29,7 +29,7 @@ get_items <- function(db,
                       collection_id,
                       ids,
                       limit,
-                      geometry,
+                      geom,
                       exact_date,
                       start_date,
                       end_date,
@@ -42,12 +42,14 @@ get_item <- function(db, collection_id, item_id) {
 }
 
 search_items <- function(db,
-                         limit = NULL,
-                         bbox = NULL,
-                         datetime = NULL,
-                         intersects = NULL,
-                         ids = NULL,
-                         collections = NULL,
-                         page = NULL) {
+                         limit,
+                         bbox,
+                         exact_date,
+                         start_date,
+                         end_date,
+                         intersects,
+                         ids,
+                         collections,
+                         page) {
   UseMethod("search_items", db)
 }

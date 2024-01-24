@@ -54,40 +54,53 @@ update_collections_links <- function(data) {
   data
 }
 
-update_item_links <- function(data, collection_id, item_id) {
-  data$links <- list(
+update_item_links <- function(item, collection_id) {
+  item$links <- list(
     new_link(
       rel = "root",
       href = get_endpoint("/")
     ),
     new_link(
       rel = "self",
-      href = get_endpoint("/collections", collection_id, "items", item_id)
+      href = get_endpoint("/collections", collection_id, "items", item$id)
     ),
     new_link(
       rel = "collection",
       href = get_endpoint("/collections", collection_id)
     )
   )
-  data
+  item
 }
 
-get_datetime <- function(start_date, end_date) {
-  if (is.null(start_date) && is.null(end_date)) return(NULL)
+update_each_item_links <- function(items, collection_id) {
+  items$features <- unname(lapply(
+    items$features, update_item_links, collection_id = collection_id
+  ))
+  items
+}
+
+get_datetime <- function(start_date = NULL,
+                         end_date = NULL,
+                         exact_date = NULL) {
+  if (is.null(start_date) && is.null(end_date))
+    return(as.character(exact_date))
   if (is.null(start_date)) start_date <- ".."
   if (is.null(end_date)) end_date <- ".."
   paste0(start_date, "/", end_date)
 }
 
-update_items_links <- function(data,
-                               collection_id,
-                               limit,
-                               bbox,
-                               start_date,
-                               end_date,
-                               page,
-                               pages) {
-  data$links <- list(
+update_get_items_links <- function(items,
+                                   collection_id,
+                                   limit,
+                                   bbox,
+                                   exact_date,
+                                   start_date,
+                                   end_date,
+                                   page) {
+  # update each item links
+  items <- update_each_item_links(items, collection_id)
+  # update items links
+  items$links <- list(
     new_link(
       rel = "root",
       href = get_endpoint("/")
@@ -100,7 +113,7 @@ update_items_links <- function(data,
         "items",
         limit = limit,
         bbox = bbox,
-        datetime = get_datetime(start_date, end_date),
+        datetime = get_datetime(start_date, end_date, exact_date),
         page = page
       )
     ),
@@ -109,9 +122,10 @@ update_items_links <- function(data,
       href = get_endpoint("/collections", collection_id)
     )
   )
+  pages <- get_pages(items, limit)
   if (page > 1 && page >= pages)
-    data$links <- c(
-      data$links,
+    items$links <- c(
+      items$links,
       new_link(
         rel = "prev",
         href = get_endpoint(
@@ -120,14 +134,14 @@ update_items_links <- function(data,
           "items",
           limit = limit,
           bbox = bbox,
-          datetime = get_datetime(start_date, end_date),
+          datetime = get_datetime(start_date, end_date, exact_date),
           page = page - 1
         )
       )
     )
   if (page < pages)
-    data$links <- c(
-      data$links,
+    items$links <- c(
+      items$links,
       new_link(
         rel = "next",
         href = get_endpoint(
@@ -136,10 +150,78 @@ update_items_links <- function(data,
           "items",
           limit = limit,
           bbox = bbox,
-          datetime = get_datetime(start_date, end_date),
+          datetime = get_datetime(start_date, end_date, exact_date),
           page = page + 1
         )
       )
     )
-  data
+  items
+}
+
+update_search_items_links <- function(items,
+                                      limit,
+                                      bbox,
+                                      exact_date,
+                                      start_date,
+                                      end_date,
+                                      intersects,
+                                      ids,
+                                      collections,
+                                      page) {
+  # update items links
+  items$links <- list(
+    new_link(
+      rel = "root",
+      href = get_endpoint("/")
+    ),
+    new_link(
+      rel = "self",
+      href = get_endpoint(
+        "/search",
+        limit = limit,
+        bbox = bbox,
+        datetime = get_datetime(start_date, end_date, exact_date),
+        intersects = intersects,
+        ids = ids,
+        collections = collections,
+        page = page
+      )
+    )
+  )
+  pages <- get_pages(items, limit)
+  if (page > 1 && page >= pages)
+    items$links <- c(
+      items$links,
+      new_link(
+        rel = "prev",
+        href = get_endpoint(
+          "/search",
+          limit = limit,
+          bbox = bbox,
+          datetime = get_datetime(start_date, end_date, exact_date),
+          intersects = intersects,
+          ids = ids,
+          collections = collections,
+          page = page - 1
+        )
+      )
+    )
+  if (page < pages)
+    items$links <- c(
+      items$links,
+      new_link(
+        rel = "next",
+        href = get_endpoint(
+          "/search",
+          limit = limit,
+          bbox = bbox,
+          datetime = get_datetime(start_date, end_date, exact_date),
+          intersects = intersects,
+          ids = ids,
+          collections = collections,
+          page = page + 1
+        )
+      )
+    )
+  items
 }

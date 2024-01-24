@@ -70,3 +70,8 @@ get_landing_page <- function() {
   data <- c(api, data)
   update_catalog_links(data)
 }
+
+api_error <- function(res, code, message) {
+  res$status <- code
+
+}

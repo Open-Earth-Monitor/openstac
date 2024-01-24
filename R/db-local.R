@@ -42,47 +42,179 @@ bbox_as_polygon <- function(x) {
   ), crs = 4326)
 }
 
+get_items_id <- function(items) {
+  if (is.null(items$features))
+    rstac::items_reap(items, "id")
+  ids <- names(items$features)
+  ids[ids == ""] <- NA_character_
+  ids
+}
+
+filter_ids <- function(items, ids) {
+  select <- get_items_id(items) %in% ids
+  select[is.na(select)] <- FALSE
+  items$features <- items$features[select]
+  items
+}
+
+filter_exact_date <- function(items, exact_date) {
+  select <- as.Date(rstac::items_datetime(items)) == as.Date(exact_date)
+  select[is.na(select)] <- FALSE
+  items$features <- items$features[select]
+  items
+}
+
+filter_start_date <- function(items, start_date) {
+  select <- as.Date(rstac::items_datetime(items)) >= as.Date(start_date)
+  select[is.na(select)] <- FALSE
+  items$features <- items$features[select]
+  items
+}
+
+filter_start_date <- function(items, end_date) {
+  select <- as.Date(rstac::items_datetime(items)) <= as.Date(end_date)
+  select[is.na(select)] <- FALSE
+  items$features <- items$features[select]
+  items
+}
+
+filter_spatial <- function(items, geom) {
+  select <- rstac::items_intersects(items, geom)
+  items$features <- items$features[select]
+  items
+}
+
+get_pages <- function(items, limit) {
+  ceiling(length(items$features) / limit)
+}
+
+paginate_items <- function(items, limit, page) {
+  if (is.null(limit)) limit <- 10
+  if (is.null(page)) page <- 1
+  pages <- get_pages(items, limit)
+  if (pages > 0) {
+    stopifnot(page <= pages)
+    # select page items
+    index_from <- (page - 1) * limit + 1
+    index_to <- if (page == pages) {
+      length(items$features)
+    } else {
+      page * limit
+    }
+    select <- seq(index_from, index_to)
+    items$features <- items$features[select]
+  }
+  items$numberReturned <- length(items$features)
+  items
+}
+
 #' @export
 get_items.local <- function(db,
                             collection_id,
-                            ids,
                             limit,
-                            geometry,
+                            bbox,
                             exact_date,
                             start_date,
                             end_date,
                             page) {
+  # prepare items
   stopifnot(collection_id %in% names(db$items))
   items <- db$items[[collection_id]]
-  # id filter
-  if (!is.null(ids)) {
-    select <- rstac::items_reap(items, "id") %in% ids
-    select[is.na(select)] <- FALSE
-    items$features <- items$features[select]
+  items$features <- unname(items$features)
+  # datetime filter...
+  # ...exact_date
+  if (!is.null(exact_date)) {
+    items <- filter_exact_date(items, exact_date)
+  }
+  # ...start_date
+  if (!is.null(start_date)) {
+    items <- filter_exact_date(items, start_date)
+  }
+  # ...end_date
+  if (!is.null(end_date)) {
+    items <- filter_exact_date(items, end_date)
+  }
+  # spatial filter
+  if (!is.null(bbox)) {
+    items <- filter_spatial(items, bbox_as_polygon(bbox))
+  }
+  items$numberMatched <- length(items$features)
+  # manage pagination
+  items <- paginate_items(items, limit, page)
+  # update links
+  update_get_items_links(
+    items = items,
+    collection_id = collection_id,
+    limit = limit,
+    bbox = bbox,
+    exact_date = exact_date,
+    start_date = start_date,
+    end_date = end_date,
+    page = page
+  )
+}
+
+#' @export
+get_item.local <- function(db, collection_id, item_id) {
+  stopifnot(collection_id %in% names(db$items))
+  items <- db$items[[collection_id]]
+  stopifnot(item_id %in% names(items))
+  item <- items[[item_id]]
+  update_item_links(item, collection_id)
+}
+
+empty_items <- function() {
+  list(
+    type = "FeatureCollection",
+    features = list(),
+    numberMatched = 0,
+    numberReturned = 0
+  )
+}
+
+#' @export
+search_items.local <- function(db,
+                               limit,
+                               bbox,
+                               exact_date,
+                               start_date,
+                               end_date,
+                               intersects,
+                               ids,
+                               collections,
+                               page) {
+  stopifnot(all(collections %in% names(db$items)))
+  items <- empty_items()
+  # merge items from all collections
+  for (collection_id in collections) {
+    new_items <- db$items[[collection_id]]
+    if (!is.null(ids))
+      new_items <- filter_ids(new_items, ids)
+    # update each item links
+    new_items <- update_each_item_links(new_items, collection_id)
+    items$features <- c(items$features, unname(new_items$features))
   }
   # datetime filter...
   # ...exact_date
   if (!is.null(exact_date)) {
-    select <- rstac::items_datetime(items) == exact_date
-    select[is.na(select)] <- FALSE
-    items$features <- items$features[select]
+    items <- filter_exact_date(items, exact_date)
   }
   # ...start_date
   if (!is.null(start_date)) {
-    select <- rstac::items_datetime(items) >= start_date
-    select[is.na(select)] <- FALSE
-    items$features <- items$features[select]
+    items <- filter_exact_date(items, start_date)
   }
   # ...end_date
   if (!is.null(end_date)) {
-    select <- rstac::items_datetime(items) <= end_date
-    select[is.na(select)] <- FALSE
-    items$features <- items$features[select]
+    items <- filter_exact_date(items, end_date)
   }
-  # spatial filter
-  if (!is.null(geometry)) {
-    select <- rstac::items_intersects(items, geometry)
-    items$features <- items$features[select]
+  # spatial filter...
+  # ...bbox
+  if (!is.null(bbox)) {
+    items <- filter_spatial(items, bbox_as_polygon(bbox))
+  }
+  # ...intersects
+  if (!is.null(intersects)) {
+    items <- filter_spatial(items, get_geom(intersects))
   }
   items$numberMatched <- length(items$features)
   # manage pagination
@@ -92,41 +224,27 @@ get_items.local <- function(db,
   if (pages > 0) {
     stopifnot(page <= pages)
     # select page items
-    if (page == pages) {
-      select <- seq((page - 1) * limit + 1, length(items$features))
+    index_from <- (page - 1) * limit + 1
+    index_to <- if (page == pages) {
+      length(items$features)
     } else {
-      select <- seq((page - 1) * limit + 1, page * limit)
+      page * limit
     }
+    select <- seq(index_from, index_to)
     items$features <- items$features[select]
   }
   items$numberReturned <- length(items$features)
   # update links
-  items$features <- lapply(items$features, update_item_links,
-                           collection_id = collection_id)
-  update_items_links(items, collection_id, limit, geometry, start_date,
-                     end_date, page, pages)
-}
-
-#' @export
-get_item.local <- function(db, collection_id, item_id) {
-  stopifnot(collection_id %in% names(db$items))
-  items <- db$items[[collection_id]]
-  stopifnot(item_id %in% names(items))
-  item <- items[[item_id]]
-  update_item_links(item, collection_id, item_id)
-}
-
-#' @export
-search_items <- function(db,
-                         limit = NULL,
-                         bbox = NULL,
-                         datetime = NULL,
-                         intersects = NULL,
-                         ids = NULL,
-                         collections = NULL,
-                         page = NULL) {
-  stopifnot(all(collections %in% names(db$items)))
-  for (collection_id in collections) {
-
-  }
+  update_search_items_links(
+    items = items,
+    limit = limit,
+    bbox = bbox,
+    exact_date = exact_date,
+    start_date = start_date,
+    end_date = end_date,
+    intersects = intersects,
+    ids = ids,
+    collections = collections,
+    page = page
+  )
 }

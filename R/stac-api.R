@@ -49,16 +49,16 @@ function(collection_id) {
 #* Items endpoint
 #* @get /collections/<collection_id>/items
 #* @param collection_id:str The ID of the collection
-#* @param limit:int Maximum number of features to return
+#* @param limit:int Maximum number of features to return (default: 10)
 #* @param bbox:[int] Bounding box (minx,miny,maxx,maxy)
 #* @param datetime:str Datetime filter
-#* @param page:int Pagination parameter
+#* @param page:int Pagination parameter (default: 1)
 #* @serializer unboxedJSON
 function(collection_id,
-         limit = NULL,
-         bbox = NULL,
-         datetime = NULL,
-         page = NULL) {
+         limit = 10,
+         bbox,
+         datetime,
+         page = 1) {
   db <- get_db(api)
   if (!is.null(limit)) {
     limit <- as.integer(limit)
@@ -66,12 +66,13 @@ function(collection_id,
     stopifnot(limit >= 1)
     stopifnot(limit <= 10000)
   }
+  if (missing(bbox)) bbox <- NULL
   if (!is.null(bbox)) {
-    bbox <- as.numeric(strsplit(bbox, ",")[[1]])
+    bbox <- as.numeric(bbox)
     stopifnot(length(bbox) == 4)
     stopifnot(all(!is.na(bbox)))
-    bbox <- bbox_as_polygon(bbox)
   }
+  if (missing(datetime)) datetime <- NULL
   if (!is.null(datetime)) {
     datetime <- strsplit(datetime, "/")[[1]]
     stopifnot(length(datetime) >= 1)
@@ -103,9 +104,8 @@ function(collection_id,
   get_items(
     db = db,
     collection_id = collection_id,
-    ids = NULL,
     limit = limit,
-    geometry = bbox,
+    bbox = bbox,
     exact_date = exact_date,
     start_date = start_date,
     end_date = end_date,
@@ -126,20 +126,21 @@ function(collection_id, item_id) {
 #* Search endpoint
 #* @get /search
 #* @post /search
-#* @param limit:int Maximum number of features to return
+#* @param limit:int Maximum number of features to return (default: 10)
 #* @param bbox:[int] Bounding box (minx,miny,maxx,maxy)
 #* @param datetime:str Datetime filter
 #* @param intersects:list GeoJSON geometry to do spatial search
 #* @param ids:[str] Array of items ID to return
 #* @param collections:[str] Array of collection ID
+#* @param page:int Pagination parameter (default: 1)
 #* @serializer unboxedJSON
-function(limit = NULL,
-         bbox = NULL,
-         datetime = NULL,
-         intersects = NULL,
-         ids = NULL,
-         collections = NULL,
-         page = NULL) {
+function(limit = 10,
+         bbox,
+         datetime,
+         intersects,
+         ids,
+         collections,
+         page = 1) {
   db <- get_db(api)
   if (!is.null(limit)) {
     limit <- as.integer(limit)
@@ -148,12 +149,13 @@ function(limit = NULL,
     stopifnot(limit <= 10000)
   }
   stopifnot(is.null(bbox) || is.null(intersects))
+  if (missing(bbox)) bbox <- NULL
   if (!is.null(bbox)) {
-    bbox <- as.numeric(strsplit(bbox, ",")[[1]])
+    bbox <- as.numeric(bbox)
     stopifnot(length(bbox) == 4)
     stopifnot(all(!is.na(bbox)))
-    bbox <- bbox_as_polygon(bbox)
   }
+  if (missing(datetime)) datetime <- NULL
   if (!is.null(datetime)) {
     datetime <- strsplit(datetime, "/")[[1]]
     stopifnot(length(datetime) >= 1)
@@ -177,15 +179,34 @@ function(limit = NULL,
       }
     }
   }
+  if (missing(intersects)) intersects <- NULL
   if (!is.null(intersects)) {
-    bbox <- as.numeric(strsplit(bbox, ",")[[1]])
-    stopifnot(length(bbox) == 4)
-    stopifnot(all(!is.na(bbox)))
-    bbox <- bbox_as_polygon(bbox)
+    stopifnot(is_geom(intersects))
+  }
+  if (missing(ids)) ids <- NULL
+  if (!is.null(ids)) {
+    ids <- as.character(ids)
+  }
+  if (missing(collections)) collections <- NULL
+  if (!is.null(collections)) {
+    collections <- as.character(collections)
+    stopifnot(length(collections) >= 1)
   }
   if (!is.null(page)) {
     page <- as.integer(page)
     stopifnot(!is.na(page))
     stopifnot(page >= 1)
   }
+  search_items(
+    db = db,
+    limit = limit,
+    bbox = bbox,
+    exact_date = exact_date,
+    start_date = start_date,
+    end_date = end_date,
+    intersects = intersects,
+    ids = ids,
+    collections = collections,
+    page = page
+  )
 }
