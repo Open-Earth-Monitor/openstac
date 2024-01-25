@@ -4,8 +4,14 @@ new_link <- function(rel, href, ...) {
   c(list(rel = rel, href = href), dots)
 }
 
-update_catalog_links <- function(data) {
-  data$links  <- list(
+update_links <- function(doc_type, doc, ...) {
+  class(doc_type) <- doc_type
+  UseMethod("update_links", doc_type)
+}
+
+#' @export
+update_links.landing_page <- function(doc_type, doc, ...) {
+  doc$links  <- list(
     new_link(
       rel = "self",
       href = get_endpoint("/")
@@ -19,29 +25,31 @@ update_catalog_links <- function(data) {
       href = get_endpoint("/collections")
     )
   )
-  data
+  doc
 }
 
-update_collection_links <- function(data) {
-  data$links <- list(
+#' @export
+update_links.collection <- function(doc_type, doc, ...) {
+  doc$links <- list(
     new_link(
       rel = "root",
       href = get_endpoint("/")
     ),
     new_link(
       rel = "self",
-      href = get_endpoint("/collections", data$id)
+      href = get_endpoint("/collections", doc$id)
     ),
     new_link(
       rel = "item",
-      href = get_endpoint("/collections", data$id, "items")
+      href = get_endpoint("/collections", doc$id, "items")
     )
   )
-  data
+  doc
 }
 
-update_collections_links <- function(data) {
-  data$links <- list(
+#' @export
+update_links.collections <- function(doc_type, doc, ...) {
+  doc$links <- list(
     new_link(
       rel = "root",
       href = get_endpoint("/")
@@ -51,25 +59,26 @@ update_collections_links <- function(data) {
       href = get_endpoint("/collections")
     )
   )
-  data
+  doc
 }
 
-update_item_links <- function(item, collection_id) {
-  item$links <- list(
+#' @export
+update_links.item <- function(doc_type, doc, ..., collection_id) {
+  doc$links <- list(
     new_link(
       rel = "root",
       href = get_endpoint("/")
     ),
     new_link(
       rel = "self",
-      href = get_endpoint("/collections", collection_id, "items", item$id)
+      href = get_endpoint("/collections", collection_id, "items", doc$id)
     ),
     new_link(
       rel = "collection",
       href = get_endpoint("/collections", collection_id)
     )
   )
-  item
+  doc
 }
 
 update_each_item_links <- function(items, collection_id) {

@@ -17,19 +17,57 @@ new_db <- function(driver, ...) {
   UseMethod("new_db", driver)
 }
 
-get_collections <- function(db) {
-  UseMethod("get_collections", db)
+db_collections_id <- function(db) {
+  UseMethod("db_collections_id", db)
 }
 
-get_collection <- function(db, collection_id) {
-  UseMethod("get_collection", db)
+#' @export
+db_collections <- function(db) {
+  UseMethod("db_collections", db)
+}
+
+db_collection <- function(db, collection_id) {
+  UseMethod("db_collection", db)
+}
+
+db_items_id <- function(db, collection_id) {
+  UseMethod("db_items_id", db)
+}
+
+db_items <- function(db,
+                     collection_id,
+                     items_id,
+                     exact_date,
+                     start_date,
+                     end_date,
+                     bbox,
+                     intersects) {
+  UseMethod("db_items", db)
+}
+
+db_cache <- function(db) {
+  attr(db, "cache")
+}
+
+is_cached <- function(cache, name) {
+  name <- paste0(name, collapse = "_")
+  exists(name, envir = cache)
+}
+
+get_cache <- function(cache, name) {
+  name <- paste0(name, collapse = "_")
+  get(name, envir = cache)
+}
+
+set_cache <- function(cache, name, value) {
+  name <- paste0(name, collapse = "_")
+  assign(name, value, envir = cache)
 }
 
 get_items <- function(db,
                       collection_id,
-                      ids,
                       limit,
-                      geom,
+                      bbox,
                       exact_date,
                       start_date,
                       end_date,

@@ -17,24 +17,21 @@ conforms_to <- c(
 #* @get /
 #* @serializer unboxedJSON
 function() {
-  get_landing_page()
+  api_landing_page()
 }
 
 #* Conformance endpoint
 #* @get /conformance
 #* @serializer unboxedJSON
 function() {
-  list(
-    conformsTo = conforms_to
-  )
+  api_conformance()
 }
 
 #* Collections endpoint
 #* @get /collections
 #* @serializer unboxedJSON
 function() {
-  db <- get_db(api)
-  get_collections(db)
+  api_collections()
 }
 
 #* Collection endpoint
@@ -42,8 +39,7 @@ function() {
 #* @param collection_id:str The ID of the collection
 #* @serializer unboxedJSON
 function(collection_id) {
-  db <- get_db(api)
-  get_collection(db, collection_id)
+  api_collection(collection_id)
 }
 
 #* Items endpoint
