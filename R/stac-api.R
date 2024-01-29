@@ -17,21 +17,21 @@ conforms_to <- c(
 #* @get /
 #* @serializer unboxedJSON
 function() {
-  api_landing_page()
+  api_landing_page(api)
 }
 
 #* Conformance endpoint
 #* @get /conformance
 #* @serializer unboxedJSON
 function() {
-  api_conformance()
+  api_conformance(api)
 }
 
 #* Collections endpoint
 #* @get /collections
 #* @serializer unboxedJSON
 function() {
-  api_collections()
+  api_collections(api)
 }
 
 #* Collection endpoint
@@ -39,7 +39,7 @@ function() {
 #* @param collection_id:str The ID of the collection
 #* @serializer unboxedJSON
 function(collection_id) {
-  api_collection(collection_id)
+  api_collection(api, collection_id)
 }
 
 #* Items endpoint
@@ -55,7 +55,6 @@ function(collection_id,
          bbox,
          datetime,
          page = 1) {
-  db <- get_db(api)
   if (!is.null(limit)) {
     limit <- as.integer(limit)
     stopifnot(!is.na(limit))
@@ -69,13 +68,13 @@ function(collection_id,
     stopifnot(all(!is.na(bbox)))
   }
   if (missing(datetime)) datetime <- NULL
+  exact_date <- NULL
+  start_date <- NULL
+  end_date <- NULL
   if (!is.null(datetime)) {
     datetime <- strsplit(datetime, "/")[[1]]
     stopifnot(length(datetime) >= 1)
     stopifnot(length(datetime) <= 2)
-    exact_date <- NULL
-    start_date <- NULL
-    end_date <- NULL
     if (length(datetime) == 1) {
       exact_date <- as.Date(datetime)
       stopifnot(!is.na(extact_date))
@@ -97,8 +96,8 @@ function(collection_id,
     stopifnot(!is.na(page))
     stopifnot(page >= 1)
   }
-  get_items(
-    db = db,
+  api_items(
+    api = api,
     collection_id = collection_id,
     limit = limit,
     bbox = bbox,
@@ -115,8 +114,7 @@ function(collection_id,
 #* @param item_id:str The ID of the item
 #* @serializer unboxedJSON
 function(collection_id, item_id) {
-  db <- get_db(api)
-  get_item(db, collection_id, item_id)
+  api_item(api, collection_id, item_id)
 }
 
 #* Search endpoint
@@ -130,14 +128,14 @@ function(collection_id, item_id) {
 #* @param collections:[str] Array of collection ID
 #* @param page:int Pagination parameter (default: 1)
 #* @serializer unboxedJSON
-function(limit = 10,
+function(req,
+         limit = 10,
          bbox,
          datetime,
          intersects,
          ids,
          collections,
          page = 1) {
-  db <- get_db(api)
   if (!is.null(limit)) {
     limit <- as.integer(limit)
     stopifnot(!is.na(limit))
@@ -180,9 +178,7 @@ function(limit = 10,
     stopifnot(is_geom(intersects))
   }
   if (missing(ids)) ids <- NULL
-  if (!is.null(ids)) {
-    ids <- as.character(ids)
-  }
+  if (!is.null(ids)) ids <- as.character(ids)
   if (missing(collections)) collections <- NULL
   if (!is.null(collections)) {
     collections <- as.character(collections)
@@ -193,8 +189,8 @@ function(limit = 10,
     stopifnot(!is.na(page))
     stopifnot(page >= 1)
   }
-  search_items(
-    db = db,
+  api_search(
+    api = api,
     limit = limit,
     bbox = bbox,
     exact_date = exact_date,
@@ -203,6 +199,7 @@ function(limit = 10,
     intersects = intersects,
     ids = ids,
     collections = collections,
-    page = page
+    page = page,
+    method = req$REQUEST_METHOD
   )
 }

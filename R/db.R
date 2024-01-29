@@ -2,12 +2,12 @@ drivers <- function() c("local")
 
 set_db <- function(api, driver, ...) {
   db <- new_db(driver, ...)
-  set_attr(api, "db", db)
+  api_set_attr(api, "db", db)
 }
 
 get_db <- function(api) {
-  stopifnot(exists("db", envir = get_env(api)))
-  get_attr(api, "db")
+  stopifnot(exists("db", envir = api_env(api)))
+  api_attr(api, "db")
 }
 
 new_db <- function(driver, ...) {
@@ -36,58 +36,28 @@ db_items_id <- function(db, collection_id) {
 
 db_items <- function(db,
                      collection_id,
-                     items_id,
+                     limit,
+                     bbox,
                      exact_date,
                      start_date,
                      end_date,
-                     bbox,
-                     intersects) {
+                     page) {
   UseMethod("db_items", db)
 }
 
-db_cache <- function(db) {
-  attr(db, "cache")
+db_item <- function(db, collection_id, item_id) {
+  UseMethod("db_item", db)
 }
 
-is_cached <- function(cache, name) {
-  name <- paste0(name, collapse = "_")
-  exists(name, envir = cache)
-}
-
-get_cache <- function(cache, name) {
-  name <- paste0(name, collapse = "_")
-  get(name, envir = cache)
-}
-
-set_cache <- function(cache, name, value) {
-  name <- paste0(name, collapse = "_")
-  assign(name, value, envir = cache)
-}
-
-get_items <- function(db,
-                      collection_id,
+db_search <- function(db,
                       limit,
                       bbox,
                       exact_date,
                       start_date,
                       end_date,
+                      intersects,
+                      ids,
+                      collections,
                       page) {
-  UseMethod("get_items", db)
-}
-
-get_item <- function(db, collection_id, item_id) {
-  UseMethod("get_item", db)
-}
-
-search_items <- function(db,
-                         limit,
-                         bbox,
-                         exact_date,
-                         start_date,
-                         end_date,
-                         intersects,
-                         ids,
-                         collections,
-                         page) {
-  UseMethod("search_items", db)
+  UseMethod("db_search", db)
 }
