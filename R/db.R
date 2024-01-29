@@ -1,5 +1,6 @@
 drivers <- function() c("local")
 
+#' @export
 set_db <- function(api, driver, ...) {
   db <- new_db(driver, ...)
   api_set_attr(api, "db", db)

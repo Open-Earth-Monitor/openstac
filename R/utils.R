@@ -21,7 +21,7 @@ get_datetime <- function(start_date = NULL,
 }
 
 get_pages <- function(items, limit) {
-  ceiling(length(items$numberMatched) / limit)
+  ceiling(items$numberMatched / limit)
 }
 
 get_host_name <- function(host) {

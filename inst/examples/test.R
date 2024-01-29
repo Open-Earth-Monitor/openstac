@@ -4,6 +4,8 @@ library(sf)
 collection <- rstac::stac_read("https://s3.eu-central-1.wasabisys.com/stac/openlandmap/wv_mcd19a2v061.seasconv/collection.json")
 items <- rstac::read_items(collection, limit = 1000, page = 1)
 
+# TODO: properties$gsd -> int
+
 append_db <- function(collection, items, file) {
   # ...fix latlong -> longlat
   fix_longlat <- function(item) {

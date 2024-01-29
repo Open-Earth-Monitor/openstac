@@ -120,9 +120,9 @@ db_search.local <- function(db,
       # ...intersects
       items <- local_filter_spatial(items, get_geom(intersects))
     }
-    # store collection_id for each item in links field
+    # store collection_id for each item in collection field
     items$features <- lapply(items$features, function(item) {
-      item$links <- list(collection_id = collection_id)
+      item$collection <- collection_id
       item
     })
     features <- c(features, items$features)

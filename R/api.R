@@ -42,8 +42,13 @@ run_api <- function(api, host = "http://127.0.0.1:8000") {
   api_set_attr(api, "host", host)
   api_file <- system.file("R/stac-api.R", package = "stacserver")
   plumb <- plumber::pr(api_file, envir = environment())
+  plumb <- plumber::pr_set_error(plumb, api_error_handler)
   api_set_attr(api, "plumb", plumb)
-  plumber::pr_run(plumb, host = get_host_name(host), port = get_host_port(host))
+  plumber::pr_run(
+    pr = plumb,
+    host = get_host_name(host),
+    port = get_host_port(host)
+  )
 }
 
 api_landing_page <- function(api) {
@@ -125,6 +130,7 @@ api_items <- function(api,
 api_item <- function(api, collection_id, item_id) {
   db <- get_db(api)
   stopifnot(collection_id %in% db_collections_id(db))
+  stopifnot(item_id %in% db_items_id(db, collection_id))
   doc <- db_item(db, collection_id, item_id)
   # update links
   params <- link_params(
@@ -176,8 +182,19 @@ api_search <- function(api,
   update_links("search", doc, params)
 }
 
-# TODO: implement error handling for the API
-api_error <- function(res, code, message) {
-  res$status <- code
+api_error_handler <- function(req, res, e) {
+  if (is.null(e$code)) e$code <- 500
+  if (is.null(e$message)) e$message <- "Internal server error"
+  res$status <- e$code
+  list(code = e$code, message = e$message)
+}
 
+api_stopifnot <- function(value, code = 500, message = NULL) {
+  if (is.null(message)) {
+    expr <- substitute(value)
+    message <- paste(deparse(expr), "is not TRUE")
+  }
+  if (!value) {
+    stop(errorCondition(message, code = code))
+  }
 }
