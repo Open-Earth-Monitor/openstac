@@ -2,10 +2,10 @@
 
 S3method(db_collection,local)
 S3method(db_collections,local)
-S3method(db_collections_id,local)
+S3method(db_collections_id_exist,local)
 S3method(db_item,local)
 S3method(db_items,local)
-S3method(db_items_id,local)
+S3method(db_items_id_exist,local)
 S3method(db_search,local)
 S3method(new_db,local)
 S3method(update_links,collection)

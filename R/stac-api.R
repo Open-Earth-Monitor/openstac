@@ -58,30 +58,12 @@ function(collection_id,
   # check parameters
   if (!is.null(limit)) {
     limit <- as.integer(limit)
-    api_stopifnot(
-      value = !is.na(limit),
-      code = 400,
-      message = "limit is not an integer"
-    )
-    api_stopifnot(
-      value = limit >= 1 && limit <= 10000,
-      code = 400,
-      message = "limit not between 1 and 10000"
-    )
+    check_limit(limit)
   }
   if (missing(bbox)) bbox <- NULL
   if (!is.null(bbox)) {
     bbox <- as.numeric(bbox)
-    api_stopifnot(
-      value = all(!is.na(bbox)),
-      code = 400,
-      message = "bbox coordinates are not numeric"
-    )
-    api_stopifnot(
-      value = length(bbox) == 4,
-      code = 400,
-      message = "bbox does not have 4 numbers"
-    )
+    check_bbox(bbox)
   }
   if (missing(datetime)) datetime <- NULL
   exact_date <- NULL
@@ -89,43 +71,21 @@ function(collection_id,
   end_date <- NULL
   if (!is.null(datetime)) {
     datetime <- strsplit(datetime, "/")[[1]]
-    api_stopifnot(
-      value = length(datetime) == 1 || length(datetime) == 2,
-      code = 400,
-      message = "datetime is not a valid time stamp or time interval"
-    )
+    check_datetime(datetime)
     if (length(datetime) == 1) {
       exact_date <- as.Date(datetime)
-      api_stopifnot(
-        value = !is.na(extact_date),
-        code = 400,
-        message = "datetime is not a valid time stamp or time interval"
-      )
     } else {
-      start_date <- datetime[[1]]
-      if (start_date != "..") {
-        start_date <- as.Date(start_date)
-        api_stopifnot(
-          value = !is.na(start_date),
-          code = 400,
-          message = "datetime is not a valid time stamp or time interval"
-        )
+      if (datetime[[1]] != "..") {
+        start_date <- as.Date(datetime[[1]])
       }
-      end_date <- datetime[[2]]
-      if (end_date != "..") {
-        end_date <- as.Date(end_date)
-        api_stopifnot(
-          value = !is.na(end_date),
-          code = 400,
-          message = "datetime is not a valid time stamp or time interval"
-        )
+      if (datetime[[2]] != "..") {
+        end_date <- as.Date(datetime[[2]])
       }
     }
   }
   if (!is.null(page)) {
     page <- as.integer(page)
-    stopifnot(!is.na(page))
-    stopifnot(page >= 1)
+    check_page_param(page)
   }
   # call api items
   api_items(
@@ -168,34 +128,21 @@ function(req,
          ids,
          collections,
          page = 1) {
+  method <- req$REQUEST_METHOD
   # check parameters
   if (!is.null(limit)) {
     limit <- as.integer(limit)
-    api_stopifnot(
-      value = !is.na(limit),
-      code = 400,
-      message = "limit is not an integer"
-    )
-    api_stopifnot(
-      value = limit >= 1 && limit <= 10000,
-      code = 400,
-      message = "limit not between 1 and 10000"
-    )
+    check_limit(limit)
   }
-  stopifnot(is.null(bbox) || is.null(intersects))
+  api_stopifnot(
+    value = is.null(bbox) || is.null(intersects),
+    code = 400,
+    message = "only one of either intersects or bbox may be provided"
+  )
   if (missing(bbox)) bbox <- NULL
   if (!is.null(bbox)) {
     bbox <- as.numeric(bbox)
-    api_stopifnot(
-      value = all(!is.na(bbox)),
-      code = 400,
-      message = "bbox coordinates are not numeric"
-    )
-    api_stopifnot(
-      value = length(bbox) == 4,
-      code = 400,
-      message = "bbox does not have 4 numbers"
-    )
+    check_bbox(bbox)
   }
   if (missing(datetime)) datetime <- NULL
   exact_date <- NULL
@@ -203,54 +150,37 @@ function(req,
   end_date <- NULL
   if (!is.null(datetime)) {
     datetime <- strsplit(datetime, "/")[[1]]
-    api_stopifnot(
-      value = length(datetime) == 1 || length(datetime) == 2,
-      code = 400,
-      message = "datetime is not a valid time stamp or time interval"
-    )
+    check_datetime(datetime)
     if (length(datetime) == 1) {
       exact_date <- as.Date(datetime)
-      api_stopifnot(
-        value = !is.na(extact_date),
-        code = 400,
-        message = "datetime is not a valid time stamp or time interval"
-      )
     } else {
-      start_date <- datetime[[1]]
-      if (start_date != "..") {
-        start_date <- as.Date(start_date)
-        api_stopifnot(
-          value = !is.na(start_date),
-          code = 400,
-          message = "datetime is not a valid time stamp or time interval"
-        )
+      if (datetime[[1]] != "..") {
+        start_date <- as.Date(datetime[[1]])
       }
-      end_date <- datetime[[2]]
-      if (end_date != "..") {
-        end_date <- as.Date(end_date)
-        api_stopifnot(
-          value = !is.na(end_date),
-          code = 400,
-          message = "datetime is not a valid time stamp or time interval"
-        )
+      if (datetime[[2]] != "..") {
+        end_date <- as.Date(datetime[[2]])
       }
     }
   }
   if (missing(intersects)) intersects <- NULL
   if (!is.null(intersects)) {
-    stopifnot(is_geom(intersects))
+    api_stopifnot(
+      value = method == "POST",
+      code = 405,
+      message = "the request method is not supported"
+    )
+    check_intersects_param(intersects)
   }
   if (missing(ids)) ids <- NULL
   if (!is.null(ids)) ids <- as.character(ids)
   if (missing(collections)) collections <- NULL
   if (!is.null(collections)) {
     collections <- as.character(collections)
-    stopifnot(length(collections) >= 1)
+    check_collections_param(collections)
   }
   if (!is.null(page)) {
     page <- as.integer(page)
-    stopifnot(!is.na(page))
-    stopifnot(page >= 1)
+    check_page_param(page)
   }
   # call api search
   api_search(
@@ -264,6 +194,6 @@ function(req,
     ids = ids,
     collections = collections,
     page = page,
-    method = req$REQUEST_METHOD
+    method = method
   )
 }

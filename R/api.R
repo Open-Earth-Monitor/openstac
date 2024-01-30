@@ -83,7 +83,7 @@ api_collections <- function(api) {
 
 api_collection <- function(api, collection_id) {
   db <- get_db(api)
-  stopifnot(collection_id %in% db_collections_id(db))
+  check_collection_db(db, collection_id)
   doc <- db_collection(db, collection_id)
   # update links
   params <- link_params(
@@ -102,7 +102,7 @@ api_items <- function(api,
                       end_date,
                       page) {
   db <- get_db(api)
-  stopifnot(collection_id %in% db_collections_id(db))
+  check_collection_db(db, collection_id)
   doc <- db_items(
     db = db,
     collection_id = collection_id,
@@ -129,8 +129,8 @@ api_items <- function(api,
 
 api_item <- function(api, collection_id, item_id) {
   db <- get_db(api)
-  stopifnot(collection_id %in% db_collections_id(db))
-  stopifnot(item_id %in% db_items_id(db, collection_id))
+  check_collection_db(db, collection_id)
+  check_item_db(db, collection_id, item_id)
   doc <- db_item(db, collection_id, item_id)
   # update links
   params <- link_params(

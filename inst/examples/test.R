@@ -4,11 +4,9 @@ library(sf)
 collection <- rstac::stac_read("https://s3.eu-central-1.wasabisys.com/stac/openlandmap/wv_mcd19a2v061.seasconv/collection.json")
 items <- rstac::read_items(collection, limit = 1000, page = 1)
 
-# TODO: properties$gsd -> int
-
 append_db <- function(collection, items, file) {
-  # ...fix latlong -> longlat
-  fix_longlat <- function(item) {
+  fix_item <- function(item) {
+    # ... fix latlong -> longlat
     if (abs(item$bbox[[2]]) > 90) {
       item$bbox <- item$bbox[c(2, 1, 4, 3)]
       item$geometry$coordinates[[1]] <-
@@ -16,9 +14,12 @@ append_db <- function(collection, items, file) {
           coord[c(2, 1)]
         })
     }
+    # ... fix gsd
+    if ("gsd" %in% names(item))
+      item$gsd <- as.numeric(item$gsd)
     item
   }
-  items$features <- lapply(items$features, fix_longlat)
+  items$features <- lapply(items$features, fix_item)
   # erase links
   collection$links <- NULL
   items$features <- lapply(items$features, \(x) {x$links <- NULL; x})

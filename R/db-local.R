@@ -2,6 +2,7 @@
 
 #' @export
 new_db.local <- function(driver, file, ...) {
+  # driver checkers
   stopifnot(file.exists(file))
   data <- readRDS(file)
   stopifnot(is.list(data))
@@ -21,8 +22,8 @@ new_db.local <- function(driver, file, ...) {
 }
 
 #' @export
-db_collections_id.local <- function(db) {
-  names(db$collections)
+db_collections_id_exist.local <- function(db, ids) {
+  ids %in% names(db$collections)
 }
 
 #' @export
@@ -36,9 +37,9 @@ db_collection.local <- function(db, collection_id) {
 }
 
 #' @export
-db_items_id.local <- function(db, collection_id) {
+db_items_id_exist.local <- function(db, collection_id, ids) {
   items <- local_items(db, collection_id)
-  local_items_id(items)
+  ids %in% local_items_id(items)
 }
 
 #' @export
@@ -187,7 +188,7 @@ local_paginate_items <- function(items, limit, page) {
   if (is.null(page)) page <- 1
   pages <- get_pages(items, limit)
   if (pages > 0) {
-    stopifnot(page <= pages)
+    check_page_param(page, pages)
     # select page items
     index_from <- (page - 1) * limit + 1
     index_to <- if (page == pages) {
