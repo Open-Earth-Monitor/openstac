@@ -126,7 +126,7 @@ update_links.items <- function(doc_type, doc, params) {
         "items",
         limit = limit,
         bbox = bbox,
-        datetime = get_datetime(start_date, end_date, exact_date),
+        datetime = datetime(start_date, end_date, exact_date),
         page = page
       )
     ),
@@ -147,7 +147,7 @@ update_links.items <- function(doc_type, doc, params) {
         "items",
         limit = limit,
         bbox = bbox,
-        datetime = get_datetime(start_date, end_date, exact_date),
+        datetime = datetime(start_date, end_date, exact_date),
         page = page - 1
       )
     )
@@ -162,7 +162,7 @@ update_links.items <- function(doc_type, doc, params) {
         "items",
         limit = limit,
         bbox = bbox,
-        datetime = get_datetime(start_date, end_date, exact_date),
+        datetime = datetime(start_date, end_date, exact_date),
         page = page + 1
       )
     )
@@ -182,16 +182,16 @@ update_links.search <- function(doc_type, doc, params) {
   collections <- params$collections
   page <- params$page
   method <- params$method
-  pages <- get_pages(items, limit)
+  pages <- get_pages(doc, limit)
   # update item links
-  items$features <- lapply(items$features, function(item) {
+  doc$features <- lapply(doc$features, function(item) {
     params <- list(
       host = host,
       collection_id = item$collection
     )
     update_links("item", item, params)
   })
-  items$links <- list(
+  doc$links <- list(
     new_link(
       rel = "root",
       href = get_endpoint(host, "/")
@@ -200,45 +200,45 @@ update_links.search <- function(doc_type, doc, params) {
   # add navigation links
   if (method == "GET") {
     if (page > 1 && page <= pages)
-      items$links <- add_link(
-        items$links,
+      doc$links <- add_link(
+        doc$links,
         rel = "prev",
         href = get_endpoint(
           api = api,
           "/search",
           limit = limit,
           bbox = bbox,
-          datetime = get_datetime(start_date, end_date, exact_date),
+          datetime = datetime(start_date, end_date, exact_date),
           ids = ids,
           collections = collections,
           page = page - 1
         )
       )
     if (page < pages)
-      items$links <- add_link(
-        items$links,
+      doc$links <- add_link(
+        doc$links,
         rel = "next",
         href = get_endpoint(
           api = api,
           "/search",
           limit = limit,
           bbox = bbox,
-          datetime = get_datetime(start_date, end_date, exact_date),
+          datetime = datetime(start_date, end_date, exact_date),
           ids = ids,
           collections = collections,
           page = page + 1
         )
       )
   } else if (method == "POST") {
-    items$links <- list(
+    doc$links <- list(
       new_link(
         rel = "root",
         href = get_endpoint(host, "/")
       )
     )
     if (page > 1 && page <= pages)
-      items$links <- add_link(
-        items$links,
+      doc$links <- add_link(
+        doc$links,
         rel = "prev",
         href = get_endpoint(host, "/search"),
         body = list(
@@ -247,8 +247,8 @@ update_links.search <- function(doc_type, doc, params) {
         merge = TRUE
       )
     if (page < pages)
-      items$links <- add_link(
-        items$links,
+      doc$links <- add_link(
+        doc$links,
         rel = "next",
         href = get_endpoint(host, "/search"),
         body = list(
@@ -257,5 +257,5 @@ update_links.search <- function(doc_type, doc, params) {
         merge = TRUE
       )
   }
-  items
+  doc
 }

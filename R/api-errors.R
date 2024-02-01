@@ -1,100 +1,98 @@
-check_limit <- function(limit) {
+#' @export
+check_limit <- function(limit, min, max) {
   api_stopifnot(
-    value = !is.na(limit),
-    code = 400,
-    message = "limit is not an integer"
+    !is.na(limit),
+    status = 400,
+    "limit is not an integer"
   )
   api_stopifnot(
-    value = limit >= 1 && limit <= 10000,
-    code = 400,
-    message = "limit not between 1 and 10000"
+    limit >= min && limit <= max,
+    status = 400,
+    "limit not between ", min, " and ", max
   )
 }
 
+#' @export
 check_bbox <- function(bbox) {
   api_stopifnot(
-    value = all(!is.na(bbox)),
-    code = 400,
-    message = "bbox coordinates are not numeric"
+    all(!is.na(bbox)),
+    status = 400,
+    "bbox coordinates are not numeric"
   )
   api_stopifnot(
-    value = length(bbox) == 4,
-    code = 400,
-    message = "bbox does not have 4 numbers"
+    length(bbox) == 4,
+    status = 400,
+    "bbox does not have 4 numbers"
   )
 }
 
-check_time_stamp <- function(exact_date) {
+check_rfc3339 <- function(exact_date) {
   api_stopifnot(
-    value = !is.na(extact_date),
-    code = 400,
-    message = "datetime is not a valid time stamp or time interval"
+    !is.na(as.Date(extact_date)),
+    status = 400,
+    "datetime is not a valid time stamp or time interval"
   )
 }
 
+#' @export
 check_datetime <- function(datetime) {
   api_stopifnot(
-    value = length(datetime) == 1 || length(datetime) == 2,
-    code = 400,
-    message = "datetime is not a valid time stamp or time interval"
+    length(datetime) == 1 || length(datetime) == 2,
+    status = 400,
+    "datetime is not a valid time stamp or time interval"
   )
   if (length(datetime) == 1) {
-    check_time_stamp(as.Date(datetime))
+    check_rfc3339(datetime)
   } else {
     if (datetime[[1]] != "..")
-      check_time_stamp(as.Date(datetime[[1]]))
+      check_rfc3339(datetime[[1]])
     if (datetime[[2]] != "..")
-      check_time_stamp(as.Date(datetime[[2]]))
+      check_rfc3339(datetime[[2]])
   }
 }
 
-check_page_param <- function(page, pages = NULL) {
+#' @export
+check_page <- function(page) {
   api_stopifnot(
-    value = !is.na(page),
-    code = 400,
-    message = "page is not an integer"
+    !is.na(page),
+    status = 400,
+    "page is not an integer"
   )
   api_stopifnot(
-    value = page >= 1,
-    code = 400,
-    message = "page not greater than or equal to 1"
+    page >= 1,
+    status = 400,
+    "page not greater than or equal to 1"
   )
-  if (!is.null(pages))
-    api_stopifnot(
-      value = page >= 1,
-      code = 400,
-      message = paste0("page not less than or equal to ", pages)
-    )
 }
 
 check_intersects_param <- function(intersects) {
   api_stopifnot(
-    value = is_geom(intersects),
-    code = 400,
-    message = "intersects is not a valid geometry"
+    is_geom(intersects),
+    status = 400,
+    "intersects is not a valid geometry"
   )
 }
 
 check_collections_param <- function(collections) {
   api_stopifnot(
-    value = length(collections) >= 1,
-    code = 400,
-    message = "at least one collection must be provided"
+    length(collections) >= 1,
+    status = 400,
+    "at least one collection must be provided"
   )
 }
 
 check_collection_db <- function(db, collection_id) {
   api_stopifnot(
-    value = all(db_collections_id_exist(db, collection_id)),
-    code = 404,
-    message = "collection not found on the server"
+    all(db_collections_id_exist(db, collection_id)),
+    status = 404,
+    "collection not found on the server"
   )
 }
 
 check_item_db <- function(db, collection_id, item_id) {
   api_stopifnot(
-    value = all(db_items_id_exist(db, collection_id, item_id)),
-    code = 404,
-    message = "item not found on the server"
+    all(db_items_id_exist(db, collection_id, item_id)),
+    status = 404,
+    "item not found on the server"
   )
 }

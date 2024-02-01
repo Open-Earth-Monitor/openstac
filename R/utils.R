@@ -10,18 +10,6 @@ bbox_as_polygon <- function(x) {
   ), crs = 4326)
 }
 
-get_datetime <- function(start_date = NULL,
-                         end_date = NULL,
-                         exact_date = NULL) {
-  if (is.null(start_date) && is.null(end_date) && is.null(exact_date))
-    return(NULL)
-  if (is.null(start_date) && is.null(end_date))
-    return(as.character(exact_date))
-  if (is.null(start_date)) start_date <- ".."
-  if (is.null(end_date)) end_date <- ".."
-  paste0(start_date, "/", end_date)
-}
-
 get_pages <- function(items, limit) {
   ceiling(items$numberMatched / limit)
 }

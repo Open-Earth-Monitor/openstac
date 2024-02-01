@@ -188,7 +188,11 @@ local_paginate_items <- function(items, limit, page) {
   if (is.null(page)) page <- 1
   pages <- get_pages(items, limit)
   if (pages > 0) {
-    check_page_param(page, pages)
+    api_stopifnot(
+      page <= pages,
+      status = 400,
+      "page not less than or equal to ", pages
+    )
     # select page items
     index_from <- (page - 1) * limit + 1
     index_to <- if (page == pages) {

@@ -9,7 +9,7 @@ set_db <- function(api, driver, ...) {
 get_db <- function(api) {
   api_stopifnot(
     value = exists("db", envir = api_env(api)),
-    code = 500
+    status = 500
   )
   api_attr(api, "db")
 }
@@ -17,11 +17,11 @@ get_db <- function(api) {
 new_db <- function(driver, ...) {
   api_stopifnot(
     value = is.character(driver),
-    code = 500
+    status = 500
   )
   api_stopifnot(
     value = driver %in% drivers(),
-    code = 500
+    status = 500
   )
   class(driver) <- driver
   UseMethod("new_db", driver)
@@ -48,9 +48,7 @@ db_items <- function(db,
                      collection_id,
                      limit,
                      bbox,
-                     exact_date,
-                     start_date,
-                     end_date,
+                     datetime,
                      page) {
   UseMethod("db_items", db)
 }
@@ -62,9 +60,7 @@ db_item <- function(db, collection_id, item_id) {
 db_search <- function(db,
                       limit,
                       bbox,
-                      exact_date,
-                      start_date,
-                      end_date,
+                      datetime,
                       intersects,
                       ids,
                       collections,

@@ -1,5 +1,6 @@
 api <- NULL
 
+#' @export
 create_api <- function(id, title, description) {
   structure(
     list(
@@ -42,7 +43,7 @@ run_api <- function(api, host = "http://127.0.0.1:8000") {
   api_set_attr(api, "host", host)
   api_file <- system.file("R/stac-api.R", package = "stacserver")
   plumb <- plumber::pr(api_file, envir = environment())
-  plumb <- plumber::pr_set_error(plumb, api_error_handler)
+  #plumb <- plumber::pr_set_error(plumb, api_error_handler)
   api_set_attr(api, "plumb", plumb)
   plumber::pr_run(
     pr = plumb,
@@ -51,6 +52,7 @@ run_api <- function(api, host = "http://127.0.0.1:8000") {
   )
 }
 
+#' @export
 api_landing_page <- function(api) {
   doc <- list(
     type = "Catalog",
@@ -67,10 +69,12 @@ api_landing_page <- function(api) {
   update_links("landing_page", doc, params)
 }
 
+#' @export
 api_conformance <- function(api) {
   list(conformsTo = conforms_to)
 }
 
+#' @export
 api_collections <- function(api) {
   db <- get_db(api)
   doc <- list(collections = db_collections(db))
@@ -81,6 +85,7 @@ api_collections <- function(api) {
   update_links("collections", doc, params)
 }
 
+#' @export
 api_collection <- function(api, collection_id) {
   db <- get_db(api)
   check_collection_db(db, collection_id)
@@ -93,13 +98,12 @@ api_collection <- function(api, collection_id) {
   update_links("collection", doc, params)
 }
 
+#' @export
 api_items <- function(api,
                       collection_id,
                       limit,
                       bbox,
-                      exact_date,
-                      start_date,
-                      end_date,
+                      datetime,
                       page) {
   db <- get_db(api)
   check_collection_db(db, collection_id)
@@ -108,9 +112,7 @@ api_items <- function(api,
     collection_id = collection_id,
     limit = limit,
     bbox = bbox,
-    exact_date = exact_date,
-    start_date = start_date,
-    end_date = end_date,
+    datetime = datetime,
     page = page
   )
   # update links
@@ -119,14 +121,13 @@ api_items <- function(api,
     collection_id = collection_id,
     limit = limit,
     bbox = bbox,
-    exact_date = exact_date,
-    start_date = start_date,
-    end_date = end_date,
+    datetime = datetime,
     page = page
   )
   update_links("items", doc, params)
 }
 
+#' @export
 api_item <- function(api, collection_id, item_id) {
   db <- get_db(api)
   check_collection_db(db, collection_id)
@@ -141,12 +142,11 @@ api_item <- function(api, collection_id, item_id) {
   update_links("item", doc, params)
 }
 
+#' @export
 api_search <- function(api,
                        limit,
                        bbox,
-                       exact_date,
-                       start_date,
-                       end_date,
+                       datetime,
                        intersects,
                        ids,
                        collections,
@@ -157,9 +157,7 @@ api_search <- function(api,
     db = db,
     limit = limit,
     bbox = bbox,
-    exact_date = exact_date,
-    start_date = start_date,
-    end_date = end_date,
+    datetime = datetime,
     intersects = intersects,
     ids = ids,
     collections = collections,
@@ -170,9 +168,7 @@ api_search <- function(api,
     host = api_host(api),
     limit = limit,
     bbox = bbox,
-    exact_date = exact_date,
-    start_date = start_date,
-    end_date = end_date,
+    datetime = datetime,
     intersects = intersects,
     ids = ids,
     collections = collections,
@@ -183,18 +179,21 @@ api_search <- function(api,
 }
 
 api_error_handler <- function(req, res, e) {
-  if (is.null(e$code)) e$code <- 500
+  if (is.null(e$status)) e$status <- 500
   if (is.null(e$message)) e$message <- "Internal server error"
-  res$status <- e$code
-  list(code = e$code, message = e$message)
+  res$status <- e$status
+  list(code = e$status, message = paste("Error:", e$message))
 }
 
-api_stopifnot <- function(value, code = 500, message = NULL) {
-  if (is.null(message)) {
-    expr <- substitute(value)
-    message <- paste(deparse(expr), "is not TRUE")
-  }
-  if (!value) {
-    stop(errorCondition(message, code = code))
-  }
+#' @export
+api_stop <- function(status, ...) {
+  stop(errorCondition(paste0(...), code = status))
+}
+
+#' @export
+api_stopifnot <- function(value, status, ...) {
+  message <- paste0(...)
+  if (!nzchar(message))
+    message <- paste(deparse(substitute(value)), "is not TRUE")
+  if (!value) api_stop(status, message)
 }

@@ -57,35 +57,22 @@ function(collection_id,
          page = 1) {
   # check parameters
   if (!is.null(limit)) {
-    limit <- as.integer(limit)
-    check_limit(limit)
+    limit <- stacserver::parse_int(limit[[1]])
+    stacserver::check_limit(limit, min = 1, max = 10000)
   }
   if (missing(bbox)) bbox <- NULL
   if (!is.null(bbox)) {
-    bbox <- as.numeric(bbox)
-    check_bbox(bbox)
+    bbox <- stacserver::parse_dbl(bbox)
+    stacserver::check_bbox(bbox)
   }
   if (missing(datetime)) datetime <- NULL
-  exact_date <- NULL
-  start_date <- NULL
-  end_date <- NULL
   if (!is.null(datetime)) {
-    datetime <- strsplit(datetime, "/")[[1]]
-    check_datetime(datetime)
-    if (length(datetime) == 1) {
-      exact_date <- as.Date(datetime)
-    } else {
-      if (datetime[[1]] != "..") {
-        start_date <- as.Date(datetime[[1]])
-      }
-      if (datetime[[2]] != "..") {
-        end_date <- as.Date(datetime[[2]])
-      }
-    }
+    datetime <- parse_datetime(datetime[[1]])
+    stacserver::check_datetime(datetime)
   }
   if (!is.null(page)) {
     page <- as.integer(page)
-    check_page_param(page)
+    check_page(page)
   }
   # call api items
   api_items(
@@ -93,9 +80,7 @@ function(collection_id,
     collection_id = collection_id,
     limit = limit,
     bbox = bbox,
-    exact_date = exact_date,
-    start_date = start_date,
-    end_date = end_date,
+    datetime = datetime,
     page = page
   )
 }
@@ -112,13 +97,13 @@ function(collection_id, item_id) {
 #* Search endpoint
 #* @get /search
 #* @post /search
-#* @param limit:int Maximum number of features to return (default: 10)
-#* @param bbox:[int] Bounding box (minx,miny,maxx,maxy)
-#* @param datetime:str Datetime filter
-#* @param intersects:list GeoJSON geometry to do spatial search
-#* @param ids:[str] Array of items ID to return
-#* @param collections:[str] Array of collection ID
-#* @param page:int Pagination parameter (default: 1)
+#* @param limit Maximum number of features to return (default: 10)
+#* @param bbox Bounding box (minx,miny,maxx,maxy)
+#* @param datetime Datetime filter
+#* @param intersects GeoJSON geometry to do spatial search
+#* @param ids Array of items ID to return
+#* @param collections Array of collection ID
+#* @param page Pagination parameter (default: 1)
 #* @serializer unboxedJSON
 function(req,
          limit = 10,
@@ -131,17 +116,18 @@ function(req,
   method <- req$REQUEST_METHOD
   # check parameters
   if (!is.null(limit)) {
-    limit <- as.integer(limit)
-    check_limit(limit)
+    limit <- parse_int(limit[[1]])
+    check_limit(limit, min = 1, max = 10000)
   }
-  api_stopifnot(
-    value = is.null(bbox) || is.null(intersects),
-    code = 400,
-    message = "only one of either intersects or bbox may be provided"
-  )
   if (missing(bbox)) bbox <- NULL
+  if (missing(intersects)) intersects <- NULL
+  stacserver::api_stopifnot(
+    is.null(bbox) || is.null(intersects),
+    status = 400,
+    "only one of either intersects or bbox may be provided"
+  )
   if (!is.null(bbox)) {
-    bbox <- as.numeric(bbox)
+    bbox <- parse_dbl(bbox)
     check_bbox(bbox)
   }
   if (missing(datetime)) datetime <- NULL
@@ -162,25 +148,24 @@ function(req,
       }
     }
   }
-  if (missing(intersects)) intersects <- NULL
   if (!is.null(intersects)) {
     api_stopifnot(
-      value = method == "POST",
-      code = 405,
-      message = "the request method is not supported"
+      method == "POST",
+      status = 405,
+      "the request method is not supported"
     )
     check_intersects_param(intersects)
   }
   if (missing(ids)) ids <- NULL
-  if (!is.null(ids)) ids <- as.character(ids)
+  if (!is.null(ids)) ids <- split_str(ids)
   if (missing(collections)) collections <- NULL
   if (!is.null(collections)) {
-    collections <- as.character(collections)
+    collections <- split_str(collections)
     check_collections_param(collections)
   }
   if (!is.null(page)) {
     page <- as.integer(page)
-    check_page_param(page)
+    check_page(page)
   }
   # call api search
   api_search(
