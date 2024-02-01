@@ -47,23 +47,24 @@ db_items.local <- function(db,
                            collection_id,
                            limit,
                            bbox,
-                           exact_date,
-                           start_date,
-                           end_date,
+                           datetime,
                            page) {
   items <- local_items(db, collection_id)
   # datetime filter...
+  exact_date <- get_exact_date(datetime)
+  start_date <- get_start_date(datetime)
+  end_date <- get_end_date(datetime)
   # ...exact_date
   if (!is.null(exact_date)) {
     items <- local_filter_exact_date(items, exact_date)
   } else {
     # ...start_date
     if (!is.null(start_date)) {
-      items <- local_filter_exact_date(items, start_date)
+      items <- local_filter_start_date(items, start_date)
     }
     # ...end_date
     if (!is.null(end_date)) {
-      items <- local_filter_exact_date(items, end_date)
+      items <- local_filter_end_date(items, end_date)
     }
   }
   # spatial filter
@@ -85,9 +86,7 @@ db_item.local <- function(db, collection_id, item_id) {
 db_search.local <- function(db,
                             limit,
                             bbox,
-                            exact_date,
-                            start_date,
-                            end_date,
+                            datetime,
                             intersects,
                             ids,
                             collections,
@@ -100,17 +99,20 @@ db_search.local <- function(db,
       items <- local_filter_ids(items, ids)
     }
     # datetime filter...
+    exact_date <- get_exact_date(datetime)
+    start_date <- get_start_date(datetime)
+    end_date <- get_end_date(datetime)
     # ...exact_date
     if (!is.null(exact_date)) {
       items <- local_filter_exact_date(items, exact_date)
     } else {
       # ...start_date
       if (!is.null(start_date)) {
-        items <- local_filter_exact_date(items, start_date)
+        items <- local_filter_start_date(items, start_date)
       }
       # ...end_date
       if (!is.null(end_date)) {
-        items <- local_filter_exact_date(items, end_date)
+        items <- local_filter_end_date(items, end_date)
       }
     }
     # spatial filter...
@@ -121,7 +123,7 @@ db_search.local <- function(db,
       # ...intersects
       items <- local_filter_spatial(items, get_geom(intersects))
     }
-    # store collection_id for each item in collection field
+    # make sure to have the collection_id for each item
     items$features <- lapply(items$features, function(item) {
       item$collection <- collection_id
       item

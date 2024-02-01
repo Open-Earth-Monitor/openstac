@@ -103,9 +103,7 @@ update_links.items <- function(doc_type, doc, params) {
   collection_id <- params$collection_id
   limit <- params$limit
   bbox <- params$bbox
-  exact_date <- params$exact_date
-  start_date <- params$start_date
-  end_date <- params$end_date
+  datetime <- params$datetime
   page <- params$page
   pages <- get_pages(doc, limit)
   # update item links
@@ -126,7 +124,7 @@ update_links.items <- function(doc_type, doc, params) {
         "items",
         limit = limit,
         bbox = bbox,
-        datetime = datetime(start_date, end_date, exact_date),
+        datetime = datetime_as_str(datetime),
         page = page
       )
     ),
@@ -147,7 +145,7 @@ update_links.items <- function(doc_type, doc, params) {
         "items",
         limit = limit,
         bbox = bbox,
-        datetime = datetime(start_date, end_date, exact_date),
+        datetime = datetime_as_str(datetime),
         page = page - 1
       )
     )
@@ -162,7 +160,7 @@ update_links.items <- function(doc_type, doc, params) {
         "items",
         limit = limit,
         bbox = bbox,
-        datetime = datetime(start_date, end_date, exact_date),
+        datetime = datetime_as_str(datetime),
         page = page + 1
       )
     )

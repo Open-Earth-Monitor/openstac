@@ -1,15 +1,3 @@
-format_endpoint <- function(x) {
-  x <- gsub("<([^:]+):[^>]+>", "<\\1>", x)
-  gsub("<([^>]+)>", "{\\1}", x)
-}
-
-list_endpoints <- function(api) {
-  plumb <- api_plumb(api)
-  lapply(plumb$endpoints$`__no-preempt__`, function(x) {
-    list(path = format_endpoint(x$path), methods = list(x$verbs))
-  })
-}
-
 get_endpoint <- function(host, ..., method = "GET") {
   dots <- c(...)
   segments <- unname(dots)

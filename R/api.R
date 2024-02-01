@@ -88,7 +88,7 @@ api_collections <- function(api) {
 #' @export
 api_collection <- function(api, collection_id) {
   db <- get_db(api)
-  check_collection_db(db, collection_id)
+  check_collection_in_db(db, collection_id)
   doc <- db_collection(db, collection_id)
   # update links
   params <- link_params(
@@ -106,7 +106,7 @@ api_items <- function(api,
                       datetime,
                       page) {
   db <- get_db(api)
-  check_collection_db(db, collection_id)
+  check_collection_in_db(db, collection_id)
   doc <- db_items(
     db = db,
     collection_id = collection_id,
@@ -130,8 +130,8 @@ api_items <- function(api,
 #' @export
 api_item <- function(api, collection_id, item_id) {
   db <- get_db(api)
-  check_collection_db(db, collection_id)
-  check_item_db(db, collection_id, item_id)
+  check_collection_in_db(db, collection_id)
+  check_item_in_db(db, collection_id, item_id)
   doc <- db_item(db, collection_id, item_id)
   # update links
   params <- link_params(

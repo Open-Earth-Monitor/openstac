@@ -20,17 +20,17 @@ parse_dbl <- function(x) {
 #' @export
 parse_datetime <- function(x) {
   x <- parse_array(x)
-  start_date <- end_date <- exact_date <- NULL
+  start <- end <- exact <- NULL
   if (length(x) == 1) {
-    exact_date <- as.Date(x)
+    exact <- as.Date(x)
   } else if (length(x) == 2) {
-    if (x[[1]] != "..") start_date <- as.Date(x[[1]])
-    if (x[[2]] != "..") end_date <- as.Date(x[[2]])
-    if (is.null(start_date) && is.null(end_date)) return(NULL)
+    if (x[[1]] != "..") start <- as.Date(x[[1]])
+    if (x[[2]] != "..") end <- as.Date(x[[2]])
+    if (is.null(start) && is.null(end)) return(NULL)
   } else {
     return(NA)
   }
-  datetime(start_date, end_date, exact_date)
+  datetime(start, end, exact)
 }
 
 #' @export

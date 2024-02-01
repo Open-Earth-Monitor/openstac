@@ -65,7 +65,8 @@ check_page <- function(page) {
   )
 }
 
-check_intersects_param <- function(intersects) {
+#' @export
+check_intersects <- function(intersects) {
   api_stopifnot(
     is_geom(intersects),
     status = 400,
@@ -73,7 +74,8 @@ check_intersects_param <- function(intersects) {
   )
 }
 
-check_collections_param <- function(collections) {
+#' @export
+check_collections <- function(collections) {
   api_stopifnot(
     length(collections) >= 1,
     status = 400,
@@ -81,7 +83,8 @@ check_collections_param <- function(collections) {
   )
 }
 
-check_collection_db <- function(db, collection_id) {
+#' @export
+check_collection_in_db <- function(db, collection_id) {
   api_stopifnot(
     all(db_collections_id_exist(db, collection_id)),
     status = 404,
@@ -89,7 +92,8 @@ check_collection_db <- function(db, collection_id) {
   )
 }
 
-check_item_db <- function(db, collection_id, item_id) {
+#' @export
+check_item_in_db <- function(db, collection_id, item_id) {
   api_stopifnot(
     all(db_items_id_exist(db, collection_id, item_id)),
     status = 404,
