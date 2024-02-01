@@ -1,22 +1,28 @@
 datetime <- function(start, end, exact) {
-  structure(
-    list(start = start, end = end, exact = exact),
-    class = "api_datetime"
-  )
+  list(start = start, end = end, exact = exact)
 }
 
-#' @exportS3Method base::as.character
-as.character.api_datetime <- function(start, end, exact) {
-  if (is.null(start) && is.null(end) && is.null(exact))
+datetime_as_str <- function(x) {
+  if (is.null(x$start) && is.null(x$end) && is.null(x$exact))
     return(NULL)
-  if (is.null(start) && is.null(end))
-    return(as.character(exact))
-  if (is.null(start)) start <- ".."
-  if (is.null(end)) end <- ".."
-  paste0(start, "/", end)
+  if (is.null(x$start) && is.null(x$end))
+    return(as.character(x$exact))
+  if (is.null(x$start)) x$start <- ".."
+  if (is.null(x$end)) x$end <- ".."
+  paste0(x$start, "/", x$end)
 }
 
-get_exact_date <- function(datetime) {
-  if (!is.null(datetime)) {}
+get_exact_date <- function(x) {
+  if (!is.null(x))
+    x$exact
 }
 
+get_start_date <- function(x) {
+  if (!is.null(x))
+    x$start
+}
+
+get_end_date <- function(x) {
+  if (!is.null(x))
+    x$end
+}
