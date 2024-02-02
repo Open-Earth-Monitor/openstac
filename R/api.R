@@ -9,6 +9,7 @@
 
 .stac_version <- "v1.0.0"
 
+#' @export
 create_api_stac <- function(title, description, conforms_to = NULL, ...) {
   structure(
     list(
