@@ -1,3 +1,6 @@
+#' @importFrom rstac items_filter
+#' @importFrom jsonlite fromJSON
+#' @importFrom sf st_sfc
 
 bbox_as_polygon <- function(x) {
   coords <- matrix(

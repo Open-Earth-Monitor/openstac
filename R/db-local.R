@@ -1,5 +1,3 @@
-#' @importFrom rstac items_filter
-
 #' @export
 new_db.local <- function(driver, file, ...) {
   # driver checkers

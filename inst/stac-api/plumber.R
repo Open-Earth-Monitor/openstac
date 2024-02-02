@@ -5,7 +5,7 @@ library(stacserver)
 #* @apiVersion 1.0.0
 
 # Create stacserver API object
-api <- create_api(
+api <- create_api_stac(
   title = "R STAC API server",
   description = "This is a STAC API 1.0.0 compliant R backend."
 )

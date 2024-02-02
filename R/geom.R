@@ -33,8 +33,10 @@ geom_type <- function(x) {
 }
 
 geom_switch <- function(x, ...) {
-  switch(geom_type(x), ...,
-         .error("Geometry of type '%s' is not supported", geom_type(x)))
+  switch(
+    geom_type(x), ...,
+    stop("Geometry of type '", geom_type(x), "' is not supported")
+  )
 }
 
 get_geom <- function(x) {

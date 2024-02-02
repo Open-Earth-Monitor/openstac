@@ -9,7 +9,7 @@
 
 .stac_version <- "v1.0.0"
 
-create_api <- function(title, description, conforms_to = NULL, ...) {
+create_api_stac <- function(title, description, conforms_to = NULL, ...) {
   structure(
     list(
       stac_version = .stac_version,
@@ -22,6 +22,20 @@ create_api <- function(title, description, conforms_to = NULL, ...) {
     env = new.env(hash = TRUE, parent = parent.frame())
   )
 }
+
+# create_api_oafeat <- function(title, description, conforms_to = NULL, ...) {
+#   structure(
+#     list(
+#       stac_version = .stac_version,
+#       title = title,
+#       description = description,
+#       conforms_to = c(.conforms_to, conforms_to),
+#       ...
+#     ),
+#     class = "oafeat",
+#     env = new.env(hash = TRUE, parent = parent.frame())
+#   )
+# }
 
 api_env <- function(api) {
   attr(api, "env")
