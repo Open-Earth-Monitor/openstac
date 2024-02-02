@@ -1,19 +1,24 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# openstac
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
 
+# openstac
 <!-- badges: start -->
 <!-- badges: end -->
 
 ## Introduction
-
-`openstac` is an R package designed to facilitate the creation of a STAC
-(SpatioTemporal Asset Catalog) API server. This package leverages the
-`plumber` package to create a RESTful API compliant with the STAC 1.0.0
-specification. With `openstac`, you can easily expose spatial and
-temporal data as STAC-compliant services, enabling seamless integration
-with other geospatial tools and platforms.
+`openstac` is an R package designed to facilitate the creation of a STAC (SpatioTemporal Asset Catalog) API server. This package leverages the `plumber` package to create a RESTful API compliant with the STAC 1.0.0 specification. With `openstac`, you can easily expose spatial and temporal data as STAC-compliant services, enabling seamless integration with other geospatial tools and platforms.
 
 ## Features
 
@@ -24,10 +29,7 @@ with other geospatial tools and platforms.
 - Easily customize endpoints and responses
 
 ## Installation
-
-You can install `openstac` from
-[GitHub](https://github.com/rolfsimoes/stacserver) using the `remotes`
-package:
+You can install `openstac` from [GitHub](https://github.com/rolfsimoes/stacserver) using the `remotes` package:
 
 ``` r
 # install.packages("devtools")
@@ -35,19 +37,17 @@ devtools::install_github("Open-Earth-Monitor/openstac")
 ```
 
 ## Usage
-
 To use `openstac`, follow these steps:
 
-1.  Import the `openstac` library: `library(openstac)`.
-2.  Create a new STAC API server using `create_api_stac()`.
-3.  Configure your API endpoints for STAC API using plumber.
-4.  Run your API using plumber.
+1. Import the `openstac` library: `library(openstac)`.
+2. Create a new STAC API server using `create_api_stac()`.
+3. Configure your API endpoints for STAC API using plumber.
+4. Run your API using plumber.
 
 ## Example
-
 This is a basic example which shows you how to solve a common problem:
 
-``` r
+```{r example, eval=FALSE, include=TRUE}
 library(openstac)
 
 #* @apiTitle STAC API
@@ -159,35 +159,28 @@ function(req, res, collection_id, item_id) {
   api_item(api, collection_id, item_id) |>
     doc_links_item(get_host(req), collection_id)
 }
+
 ```
 
-## Documentation
 
-For detailed usage and additional examples, please refer to the
-`openstac`
+## Documentation
+For detailed usage and additional examples, please refer to the `openstac` 
 [documentation](https://github.com/Open-Earth-Monitor/openstac).
 
 ## Contributing
-
-This package is under early development. We are going to add the
-contributing guidelines soon.
+This package is under early development. We are going to add the contributing guidelines soon.
 
 ## License
-
-© OpenGeoHub Foundation, 2024. Licensed under the [MIT
-License](LICENSE).
+© OpenGeoHub Foundation, 2024. Licensed under the [MIT License](LICENSE).
 
 ## Acknowledgements & Funding
+This work is supported by [OpenGeoHub Foundation](https://opengeohub.org/) and has received 
+funding from the European Commission (EC) through the projects:
 
-This work is supported by [OpenGeoHub
-Foundation](https://opengeohub.org/) and has received funding from the
-European Commission (EC) through the projects:
+- [Open-Earth-Monitor Cyberinfrastructure](https://earthmonitor.org/): Environmental information 
+  to support EU’s Green Deal (1 Jun. 2022 – 31 May 2026 - 
+  [101059548](https://cordis.europa.eu/project/id/101059548))
+- [AI4SoilHealth](https://ai4soilhealth.eu/): Accelerating collection and use of soil health 
+  information using AI technology to support the Soil Deal for Europe and EU Soil Observatory 
+  (1 Jan. 2023 – 31 Dec. 2026 - [101086179](https://cordis.europa.eu/project/id/101086179))
 
-- [Open-Earth-Monitor Cyberinfrastructure](https://earthmonitor.org/):
-  Environmental information to support EU’s Green Deal (1 Jun. 2022 – 31
-  May 2026 - [101059548](https://cordis.europa.eu/project/id/101059548))
-- [AI4SoilHealth](https://ai4soilhealth.eu/): Accelerating collection
-  and use of soil health information using AI technology to support the
-  Soil Deal for Europe and EU Soil Observatory (1 Jan. 2023 – 31
-  Dec. 2026 -
-  [101086179](https://cordis.europa.eu/project/id/101086179))
