@@ -1,15 +1,24 @@
-api <- NULL
+# A list of all conformance classes specified in a standard that the
+# server conforms to.
+.conforms_to <- c(
+  "https://api.stacspec.org/v1.0.0/core",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
+)
 
-#' @export
-create_api <- function(id, title, description) {
+.stac_version <- "v1.0.0"
+
+create_api <- function(title, description, conforms_to = NULL, ...) {
   structure(
     list(
-      id = id,
+      stac_version = .stac_version,
       title = title,
       description = description,
-      stac_version = stac_version
+      conforms_to = c(.conforms_to, conforms_to),
+      ...
     ),
-    class = c(id, "stac_api"),
+    class = "stac",
     env = new.env(hash = TRUE, parent = parent.frame())
   )
 }
@@ -28,118 +37,45 @@ api_set_attr <- function(api, name, value) {
   api
 }
 
-api_plumb <- function(api) {
-  api_attr(api, "plumb")
-}
-
-api_host <- function(api) {
-  get("host", envir = api_env(api), inherits = FALSE)
+#' @export
+set_db <- function(api, driver, ...) {
+  db <- new_db(driver, ...)
+  api_set_attr(api, "db", db)
 }
 
 #' @export
-run_api <- function(api, host = "http://127.0.0.1:8000") {
-  stopifnot(grepl("^.+://", host))
-  stopifnot(grepl(":[0-9]+$", host))
-  api_set_attr(api, "host", host)
-  api_file <- system.file("R/stac-api.R", package = "stacserver")
-  plumb <- plumber::pr(api_file, envir = environment())
-  #plumb <- plumber::pr_set_error(plumb, api_error_handler)
-  api_set_attr(api, "plumb", plumb)
-  plumber::pr_run(
-    pr = plumb,
-    host = get_host_name(host),
-    port = get_host_port(host)
-  )
+api_db <- function(api) {
+  api_attr(api, "db")
 }
 
 #' @export
-api_landing_page <- function(api) {
-  doc <- list(
-    type = "Catalog",
-    id = api$id,
-    title = api$title,
-    description = api$description,
-    stac_version = api$stac_version,
-    conformsTo = conforms_to
-  )
-  # update links
-  params <- link_params(
-    host = api_host(api)
-  )
-  update_links("landing_page", doc, params)
+api_landing_page <- function(api, ...) {
+  UseMethod("api_landing_page", api)
 }
 
 #' @export
-api_conformance <- function(api) {
-  list(conformsTo = conforms_to)
+api_conformance <- function(api, ...) {
+  UseMethod("api_conformance", api)
 }
 
 #' @export
-api_collections <- function(api) {
-  db <- get_db(api)
-  doc <- list(collections = db_collections(db))
-  # update links
-  params <- link_params(
-    host = api_host(api)
-  )
-  update_links("collections", doc, params)
+api_collections <- function(api, ...) {
+  UseMethod("api_collections", api)
 }
 
 #' @export
-api_collection <- function(api, collection_id) {
-  db <- get_db(api)
-  check_collection_in_db(db, collection_id)
-  doc <- db_collection(db, collection_id)
-  # update links
-  params <- link_params(
-    host = api_host(api),
-    collection_id = collection_id
-  )
-  update_links("collection", doc, params)
+api_collection <- function(api, collection_id, ...) {
+  UseMethod("api_collection", api)
 }
 
 #' @export
-api_items <- function(api,
-                      collection_id,
-                      limit,
-                      bbox,
-                      datetime,
-                      page) {
-  db <- get_db(api)
-  check_collection_in_db(db, collection_id)
-  doc <- db_items(
-    db = db,
-    collection_id = collection_id,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    page = page
-  )
-  # update links
-  params <- link_params(
-    host = api_host(api),
-    collection_id = collection_id,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    page = page
-  )
-  update_links("items", doc, params)
+api_items <- function(api, collection_id, limit, bbox, datetime, page, ...) {
+  UseMethod("api_items", api)
 }
 
 #' @export
-api_item <- function(api, collection_id, item_id) {
-  db <- get_db(api)
-  check_collection_in_db(db, collection_id)
-  check_item_in_db(db, collection_id, item_id)
-  doc <- db_item(db, collection_id, item_id)
-  # update links
-  params <- link_params(
-    host = api_host(api),
-    collection_id = collection_id,
-    item_id = item_id
-  )
-  update_links("item", doc, params)
+api_item <- function(api, collection_id, item_id, ...) {
+  UseMethod("api_item", api)
 }
 
 #' @export
@@ -150,39 +86,16 @@ api_search <- function(api,
                        intersects,
                        ids,
                        collections,
-                       page,
-                       method) {
-  db <- get_db(api)
-  doc <- db_search(
-    db = db,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    intersects = intersects,
-    ids = ids,
-    collections = collections,
-    page = page
-  )
-  # update links
-  params <- link_params(
-    host = api_host(api),
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    intersects = intersects,
-    ids = ids,
-    collections = collections,
-    page = page,
-    method = method
-  )
-  update_links("search", doc, params)
+                       page, ...) {
+  UseMethod("api_search", api)
 }
 
-api_error_handler <- function(req, res, e) {
-  if (is.null(e$status)) e$status <- 500
-  if (is.null(e$message)) e$message <- "Internal server error"
-  res$status <- e$status
-  list(code = e$status, message = paste("Error:", e$message))
+#' @export
+api_error_handler <- function(req, res, err) {
+  if (is.null(err$status)) err$status <- 500
+  if (is.null(err$message)) err$message <- "Internal server error"
+  res$status <- err$status
+  list(code = err$status, message = paste("Error:", err$message))
 }
 
 #' @export
@@ -191,9 +104,9 @@ api_stop <- function(status, ...) {
 }
 
 #' @export
-api_stopifnot <- function(value, status, ...) {
+api_stopifnot <- function(expr, status, ...) {
   message <- paste0(...)
   if (!nzchar(message))
-    message <- paste(deparse(substitute(value)), "is not TRUE")
-  if (!value) api_stop(status, message)
+    message <- paste(deparse(substitute(expr)), "is not TRUE")
+  if (!expr) api_stop(status, message)
 }

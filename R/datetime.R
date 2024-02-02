@@ -12,17 +12,17 @@ datetime_as_str <- function(x) {
   paste0(x$start, "/", x$end)
 }
 
-get_exact_date <- function(x) {
+get_datetime_exact <- function(x) {
   if (!is.null(x))
     x$exact
 }
 
-get_start_date <- function(x) {
+get_datetime_start <- function(x) {
   if (!is.null(x))
     x$start
 }
 
-get_end_date <- function(x) {
+get_datetime_end <- function(x) {
   if (!is.null(x))
     x$end
 }

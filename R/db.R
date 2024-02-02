@@ -1,28 +1,8 @@
 drivers <- function() c("local")
 
-#' @export
-set_db <- function(api, driver, ...) {
-  db <- new_db(driver, ...)
-  api_set_attr(api, "db", db)
-}
-
-get_db <- function(api) {
-  api_stopifnot(
-    value = exists("db", envir = api_env(api)),
-    status = 500
-  )
-  api_attr(api, "db")
-}
-
 new_db <- function(driver, ...) {
-  api_stopifnot(
-    value = is.character(driver),
-    status = 500
-  )
-  api_stopifnot(
-    value = driver %in% drivers(),
-    status = 500
-  )
+  stopifnot(is.character(driver))
+  stopifnot(driver %in% drivers())
   class(driver) <- driver
   UseMethod("new_db", driver)
 }
@@ -31,7 +11,6 @@ db_collections_id_exist <- function(db, ids) {
   UseMethod("db_collections_id_exist", db)
 }
 
-#' @export
 db_collections <- function(db) {
   UseMethod("db_collections", db)
 }
@@ -44,12 +23,7 @@ db_items_id_exist <- function(db, collection_id, ids) {
   UseMethod("db_items_id_exist", db)
 }
 
-db_items <- function(db,
-                     collection_id,
-                     limit,
-                     bbox,
-                     datetime,
-                     page) {
+db_items <- function(db, collection_id, limit, bbox, datetime, page) {
   UseMethod("db_items", db)
 }
 

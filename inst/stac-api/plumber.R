@@ -1,58 +1,58 @@
+library(stacserver)
+
 #* @apiTitle STAC API
 #* @apiDescription R STAC API server.
 #* @apiVersion 1.0.0
-stac_version <- "1.0.0"
 
-# A list of all conformance classes specified in a standard that the
-# server conforms to.
-# TODO: update dynamically using extensions
-conforms_to <- c(
-  "https://api.stacspec.org/v1.0.0/core",
-  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
-  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
-  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
+# Create stacserver API object
+api <- create_api(
+  title = "R STAC API server",
+  description = "This is a STAC API 1.0.0 compliant R backend."
 )
 
-get_api <- function(req, res) {
-
-}
+# Set API database
+db_file <- system.file("db/openlandmap.rds", package = "stacserver")
+api <- set_db(api, driver = "local", file = db_file)
 
 #* Landing page
 #* @get /
 #* @serializer unboxedJSON
 function(req, res) {
-  stacserver::api_landing_page(api)
+  api_landing_page(api) |>
+    doc_links_landing_page(get_host(req))
 }
 
 #* Conformance endpoint
 #* @get /conformance
 #* @serializer unboxedJSON
 function(req, res) {
-  stacserver::api_conformance(api)
+  api_conformance(api)
 }
 
 #* Collections endpoint
 #* @get /collections
 #* @serializer unboxedJSON
 function(req, res) {
-  stacserver::api_collections(api)
+  api_collections(api) |>
+    doc_links_collections(get_host(req))
 }
 
 #* Collection endpoint
 #* @get /collections/<collection_id>
-#* @param collection_id The ID of the collection
+#* @param collection_id:str The ID of the collection
 #* @serializer unboxedJSON
 function(req, res, collection_id) {
-  stacserver::api_collection(api, collection_id)
+  api_collection(api, collection_id) |>
+    doc_links_collection(get_host(req))
 }
 
 #* Items endpoint
 #* @get /collections/<collection_id>/items
-#* @param collection_id The ID of the collection
-#* @param limit Maximum number of features to return (default: 10)
-#* @param bbox Bounding box (minx,miny,maxx,maxy)
-#* @param datetime Datetime filter
-#* @param page Pagination parameter (default: 1)
+#* @param collection_id:str The ID of the collection
+#* @param limit:int Maximum number of features to return (default: 10)
+#* @param bbox:str Bounding box (minx,miny,maxx,maxy)
+#* @param datetime:str Datetime filter
+#* @param page:int Pagination parameter (default: 1)
 #* @serializer unboxedJSON
 function(req,
          res,
@@ -63,26 +63,35 @@ function(req,
          page = 1) {
   # check parameters
   if (!is.null(limit)) {
-    limit <- stacserver::parse_int(limit[[1]])
-    stacserver::check_limit(limit, min = 1, max = 10000)
+    limit <- parse_int(limit[[1]])
+    check_limit(limit, min = 1, max = 10000)
   }
   if (missing(bbox)) bbox <- NULL
   if (!is.null(bbox)) {
-    bbox <- stacserver::parse_dbl(bbox)
-    stacserver::check_bbox(bbox)
+    bbox <- parse_dbl(bbox)
+    check_bbox(bbox)
   }
   if (missing(datetime)) datetime <- NULL
   if (!is.null(datetime)) {
     datetime <- parse_datetime(datetime[[1]])
-    stacserver::check_datetime(datetime)
+    check_datetime(datetime)
   }
   if (!is.null(page)) {
-    page <- stacserver::parse_page(page)
-    stacserver::check_page(page)
+    page <- parse_int(page[[1]])
+    check_page(page)
   }
   # call api items
-  stacserver::api_items(
+  doc <- api_items(
     api = api,
+    collection_id = collection_id,
+    limit = limit,
+    bbox = bbox,
+    datetime = datetime,
+    page = page
+  )
+  doc_links_items(
+    doc = doc,
+    host = get_host(req),
     collection_id = collection_id,
     limit = limit,
     bbox = bbox,
@@ -93,23 +102,24 @@ function(req,
 
 #* Item endpoint
 #* @get /collections/<collection_id>/items/<item_id>
-#* @param collection_id The ID of the collection
-#* @param item_id The ID of the item
+#* @param collection_id:str The ID of the collection
+#* @param item_id:str The ID of the item
 #* @serializer unboxedJSON
 function(req, res, collection_id, item_id) {
-  stacserver::api_item(api, collection_id, item_id)
+  api_item(api, collection_id, item_id) |>
+    doc_links_item(get_host(req), collection_id)
 }
 
 #* Search endpoint
 #* @get /search
 #* @post /search
-#* @param limit Maximum number of features to return (default: 10)
-#* @param bbox Bounding box (minx,miny,maxx,maxy)
-#* @param datetime Datetime filter
-#* @param intersects GeoJSON geometry to do spatial search
-#* @param ids Array of items ID to return
-#* @param collections Array of collection ID
-#* @param page Pagination parameter (default: 1)
+#* @param limit:int Maximum number of features to return (default: 10)
+#* @param bbox:str Bounding box (minx,miny,maxx,maxy)
+#* @param datetime:str Datetime filter
+#* @param intersects:str GeoJSON geometry to do spatial search
+#* @param ids:str Array of items ID to return
+#* @param collections:str Array of collection ID
+#* @param page:int Pagination parameter (default: 1)
 #* @serializer unboxedJSON
 function(req,
          res,
@@ -122,53 +132,62 @@ function(req,
          page = 1) {
   # check parameters
   if (!is.null(limit)) {
-    limit <- stacserver::parse_int(limit[[1]])
-    stacserver::check_limit(limit, min = 1, max = 10000)
+    limit <- parse_int(limit[[1]])
+    check_limit(limit, min = 1, max = 10000)
   }
   if (missing(bbox)) bbox <- NULL
   if (missing(intersects)) intersects <- NULL
-  stacserver::api_stopifnot(
+  api_stopifnot(
     is.null(bbox) || is.null(intersects),
     status = 400,
     "only one of either intersects or bbox may be provided"
   )
   if (!is.null(bbox)) {
-    bbox <- stacserver::parse_dbl(bbox)
-    stacserver::check_bbox(bbox)
+    bbox <- parse_dbl(bbox)
+    check_bbox(bbox)
   }
   if (missing(datetime)) datetime <- NULL
   if (!is.null(datetime)) {
-    datetime <- stacserver::parse_datetime(datetime[[1]])
-    stacserver::check_datetime(datetime)
+    datetime <- parse_datetime(datetime[[1]])
+    check_datetime(datetime)
   }
-  method <- req$REQUEST_METHOD
+  method <- get_method(req)
   if (!is.null(intersects)) {
-    stacserver::api_stopifnot(
+    api_stopifnot(
       method == "POST",
       status = 405,
       "the request method is not supported"
     )
-    intersects <- stacserver::parse_json(intersects)
-    stacserver::check_intersects_param(intersects)
+    intersects <- parse_json(intersects)
+    check_intersects(intersects)
   }
   if (missing(ids)) ids <- NULL
-  if (!is.null(ids)) ids <- stacserver::parse_str(ids)
-  if (missing(collections)) collections <- NULL
+  if (!is.null(ids)) ids <- parse_str(ids)
   if (!is.null(collections)) {
-    collections <- stacserver::parse_str(collections)
-    stacserver::check_collections(collections)
+    collections <- parse_str(collections)
+    check_collections(collections)
   }
   if (!is.null(page)) {
-    page <- stacserver::parse_int(page[[1]])
-    stacserver::check_page(page)
+    page <- parse_int(page[[1]])
+    check_page(page)
   }
   # call api search
-  stacserver::api_search(
+  doc <- api_search(
     api = api,
     limit = limit,
     bbox = bbox,
     datetime = datetime,
     intersects = intersects,
+    ids = ids,
+    collections = collections,
+    page = page
+  )
+  doc_links_search(
+    doc = doc,
+    host = get_host(req),
+    limit = limit,
+    bbox = bbox,
+    datetime = datetime,
     ids = ids,
     collections = collections,
     page = page,

@@ -7,18 +7,8 @@ add_link <- function(links, rel, href, ...) {
   c(links, list(new_link(rel, href, ...)))
 }
 
-link_params <- function(host, ...) {
-  list(host = host, ...)
-}
-
-update_links <- function(doc_type, doc, params) {
-  class(doc_type) <- doc_type
-  UseMethod("update_links", doc_type)
-}
-
 #' @export
-update_links.landing_page <- function(doc_type, doc, params) {
-  host <- params$host
+doc_links_landing_page <- function(doc, host, ...) {
   doc$links  <- list(
     new_link(
       rel = "self",
@@ -31,14 +21,17 @@ update_links.landing_page <- function(doc_type, doc, params) {
     new_link(
       rel = "data",
       href = get_endpoint(host, "/collections")
+    ),
+    new_link(
+      rel = "search",
+      href = get_endpoint(host, "/search")
     )
   )
   doc
 }
 
 #' @export
-update_links.collection <- function(doc_type, doc, params) {
-  host <- params$host
+doc_links_collection <- function(doc, host, ...) {
   doc$links <- list(
     new_link(
       rel = "root",
@@ -57,11 +50,10 @@ update_links.collection <- function(doc_type, doc, params) {
 }
 
 #' @export
-update_links.collections <- function(doc_type, doc, params) {
-  host <- params$host
+doc_links_collections <- function(doc, host, ...) {
   # add collection links
   doc$collections <- lapply(doc$collections, function(collection) {
-    update_links("collection", collection, params)
+    doc_links_collection(collection, host)
   })
   doc$links <- list(
     new_link(
@@ -77,9 +69,7 @@ update_links.collections <- function(doc_type, doc, params) {
 }
 
 #' @export
-update_links.item <- function(doc_type, doc, params) {
-  host <- params$host
-  collection_id <- params$collection_id
+doc_links_item <- function(doc, host, collection_id, ...) {
   doc$links <- list(
     new_link(
       rel = "root",
@@ -98,17 +88,17 @@ update_links.item <- function(doc_type, doc, params) {
 }
 
 #' @export
-update_links.items <- function(doc_type, doc, params) {
-  host <- params$host
-  collection_id <- params$collection_id
-  limit <- params$limit
-  bbox <- params$bbox
-  datetime <- params$datetime
-  page <- params$page
+doc_links_items <- function(doc,
+                            host,
+                            collection_id,
+                            limit,
+                            bbox,
+                            datetime,
+                            page, ...) {
   pages <- get_pages(doc, limit)
   # update item links
   doc$features <- lapply(doc$features, function(item) {
-    update_links("item", item, params)
+    doc_links_item(item, host, collection_id)
   })
   doc$links <- list(
     new_link(
@@ -168,26 +158,19 @@ update_links.items <- function(doc_type, doc, params) {
 }
 
 #' @export
-update_links.search <- function(doc_type, doc, params) {
-  host <- params$host
-  limit <- params$limit
-  bbox <- params$bbox
-  exact_date <- params$exact_date
-  start_date <- params$start_date
-  end_date <- params$end_date
-  # no need for parameter: `intersects <- params$intersects`
-  ids <- params$ids
-  collections <- params$collections
-  page <- params$page
-  method <- params$method
+doc_links_search <- function(doc,
+                             host,
+                             limit,
+                             bbox,
+                             datetime,
+                             ids,
+                             collections,
+                             page,
+                             method, ...) {
   pages <- get_pages(doc, limit)
   # update item links
   doc$features <- lapply(doc$features, function(item) {
-    params <- list(
-      host = host,
-      collection_id = item$collection
-    )
-    update_links("item", item, params)
+    doc_links_item(item, host, item$collection)
   })
   doc$links <- list(
     new_link(
@@ -202,11 +185,11 @@ update_links.search <- function(doc_type, doc, params) {
         doc$links,
         rel = "prev",
         href = get_endpoint(
-          api = api,
+          host = host,
           "/search",
           limit = limit,
           bbox = bbox,
-          datetime = datetime(start_date, end_date, exact_date),
+          datetime = datetime_as_str(datetime),
           ids = ids,
           collections = collections,
           page = page - 1
@@ -217,11 +200,11 @@ update_links.search <- function(doc_type, doc, params) {
         doc$links,
         rel = "next",
         href = get_endpoint(
-          api = api,
+          host = host,
           "/search",
           limit = limit,
           bbox = bbox,
-          datetime = datetime(start_date, end_date, exact_date),
+          datetime = datetime_as_str(datetime),
           ids = ids,
           collections = collections,
           page = page + 1

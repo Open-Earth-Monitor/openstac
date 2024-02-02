@@ -14,10 +14,15 @@ get_pages <- function(items, limit) {
   ceiling(items$numberMatched / limit)
 }
 
-get_host_name <- function(host) {
-  gsub("^.+://", "", gsub(":[0-9]+$", "", host))
+
+#' @export
+get_host <- function(req) {
+  if ("HTTP_HOST" %in% names(req))
+    return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST))
+  paste0(req$rook.url_scheme, "://", req$SERVER_NAME, req$SERVER_PORT)
 }
 
-get_host_port <- function(host) {
-  as.integer(gsub("^.*:", "", host))
+#' @export
+get_method <- function(req) {
+  req$REQUEST_METHOD
 }
