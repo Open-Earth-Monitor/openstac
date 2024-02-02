@@ -11,7 +11,7 @@ api <- create_api_stac(
 )
 
 # Set API database to OpenLandMap
-db_file <- system.file("db/openlandmap.rds", package = "stacserver")
+db_file <- system.file("db/openlandmap.rds", package = "openstac")
 api <- set_db(api, driver = "local", file = db_file)
 
 #* Landing page

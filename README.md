@@ -26,7 +26,7 @@ with other geospatial tools and platforms.
 ## Installation
 
 You can install `openstac` from
-[GitHub](https://github.com/rolfsimoes/stacserver) using the `remotes`
+[GitHub](https://github.com/rolfsimoes/openstac) using the `remotes`
 package:
 
 ``` r
@@ -61,7 +61,7 @@ api <- create_api_stac(
 )
 
 # Set API database
-db_file <- system.file("db/openlandmap.rds", package = "stacserver")
+db_file <- system.file("db/openlandmap.rds", package = "openstac")
 api <- set_db(api, driver = "local", file = db_file)
 
 #* Landing page
