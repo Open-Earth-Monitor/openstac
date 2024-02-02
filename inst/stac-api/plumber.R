@@ -1,16 +1,16 @@
-library(stacserver)
+library(openstac)
 
 #* @apiTitle STAC API
 #* @apiDescription R STAC API server.
 #* @apiVersion 1.0.0
 
-# Create stacserver API object
+# Create an STAC server API object
 api <- create_api_stac(
   title = "R STAC API server",
   description = "This is a STAC API 1.0.0 compliant R backend."
 )
 
-# Set API database
+# Set API database to OpenLandMap
 db_file <- system.file("db/openlandmap.rds", package = "stacserver")
 api <- set_db(api, driver = "local", file = db_file)
 
