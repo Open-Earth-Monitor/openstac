@@ -19,7 +19,7 @@ parse_dbl <- function(x) {
 
 #' @export
 parse_datetime <- function(x) {
-  x <- parse_array(x)
+  x <- strsplit(x, "/")[[1]]
   start <- end <- exact <- NULL
   if (length(x) == 1) {
     exact <- as.Date(x)

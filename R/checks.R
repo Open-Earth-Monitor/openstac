@@ -26,9 +26,9 @@ check_bbox <- function(bbox) {
   )
 }
 
-check_rfc3339 <- function(exact_date) {
+check_rfc3339 <- function(datetime) {
   api_stopifnot(
-    !is.na(as.Date(extact_date)),
+    !is.na(datetime),
     status = 400,
     "datetime is not a valid time stamp or time interval"
   )
@@ -36,19 +36,12 @@ check_rfc3339 <- function(exact_date) {
 
 #' @export
 check_datetime <- function(datetime) {
-  api_stopifnot(
-    length(datetime) == 1 || length(datetime) == 2,
-    status = 400,
-    "datetime is not a valid time stamp or time interval"
-  )
-  if (length(datetime) == 1) {
-    check_rfc3339(datetime)
-  } else {
-    if (datetime[[1]] != "..")
-      check_rfc3339(datetime[[1]])
-    if (datetime[[2]] != "..")
-      check_rfc3339(datetime[[2]])
-  }
+  start_date <- get_datetime_start(datetime)
+  end_date <- get_datetime_end(datetime)
+  exact_date <- get_datetime_exact(datetime)
+  if (!is.null(start_date)) check_rfc3339(start_date)
+  if (!is.null(end_date)) check_rfc3339(end_date)
+  if (!is.null(exact_date)) check_rfc3339(exact_date)
 }
 
 #' @export
