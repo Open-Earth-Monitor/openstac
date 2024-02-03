@@ -17,6 +17,7 @@ future::plan(future::multisession(workers = 2))
 
 # Create an STAC server API object
 api <- create_stac(
+  id = "openlandmap",
   title = "OpenLandMap STAC API",
   description = "Searchable spatiotemporal assets of OpenLandMap hosted by OpenGeoHub"
 )
@@ -188,6 +189,11 @@ function(req,
   }
   if (missing(ids)) ids <- NULL
   if (!is.null(ids)) ids <- parse_str(ids)
+  api_stopifnot(
+    !missing(collections),
+    status = 400,
+    "collections parameter must be provided"
+  )
   if (!is.null(collections)) {
     collections <- parse_str(collections)
     check_collections(collections)

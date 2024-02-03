@@ -19,7 +19,7 @@ get_pages <- function(items, limit) {
 
 
 #' @export
-get_host <- function(req) {
+get_host <- function(api, req) {
   if ("HTTP_HOST" %in% names(req))
     return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST))
   paste0(req$rook.url_scheme, "://", req$SERVER_NAME, req$SERVER_PORT)

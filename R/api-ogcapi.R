@@ -19,7 +19,7 @@ create_ogcapi <- function(title, description, conforms_to = NULL, ...) {
 #' @export
 api_landing_page.ogcapi <- function(api, req, res, ...) {
   list(title = api$title, description = api$description) |>
-    links_landing_page(req, res)
+    links_landing_page(api, req, res)
 }
 
 #' @export
@@ -31,7 +31,7 @@ api_conformance.ogcapi <- function(api, req, res, ...) {
 api_collections.ogcapi <- function(api, req, res, ...) {
   db <- api_db(api)
   list(collections = db_collections(db)) |>
-    links_collections(req, res)
+    links_collections(api, req, res)
 }
 
 #' @export
@@ -39,7 +39,7 @@ api_collection.ogcapi <- function(api, req, res, collection_id, ...) {
   db <- api_db(api)
   check_collection_in_db(db, collection_id)
   db_collection(db, collection_id) |>
-    links_collection(req, res)
+    links_collection(api, req, res)
 }
 
 #' @export
@@ -63,6 +63,7 @@ api_items.ogcapi <- function(api,
   )
   links_items(
     doc = doc,
+    api = api,
     req = req,
     res = res,
     collection_id = collection_id,
@@ -79,5 +80,5 @@ api_item.ogcapi <- function(api, req, res, collection_id, item_id, ...) {
   check_collection_in_db(db, collection_id)
   check_item_in_db(db, collection_id, item_id)
   db_item(db, collection_id, item_id) |>
-    links_item(req, res, collection_id)
+    links_item(api, req, res, collection_id)
 }
