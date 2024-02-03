@@ -7,4 +7,6 @@ RUN R -e "install.packages('future')"
 RUN R -e "install.packages('remotes')"
 RUN R -e "remotes::install_github('rolfsimoes/openstac')"
 
-CMD ["/usr/local/lib/R/site-library/openstac/plumber/stac.R"]
+WORKDIR /openstac
+COPY ./plumber /openstac
+CMD ["/openstac/stac.R"]
