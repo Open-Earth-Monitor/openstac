@@ -1,7 +1,7 @@
 #* @apiTitle OpenLandMap STAC API
-#* @apiDescription Searchable spatiotemporal assets of OpenLandMap hosted by OpenGeoHub
+#* @apiDescription Spatio-Temporal Asset Catalog for global layers provided by OpenLandMap and maintaned by OpenGeoHub Foundation
 #* @apiVersion 1.0.0
-#* @apiBasePath /stac
+#* @apiBasePath /
 
 # Install openstac
 remotes::install_github("rolfsimoes/openstac")
@@ -21,7 +21,7 @@ api <- create_stac(
   description = "Searchable spatiotemporal assets of OpenLandMap hosted by OpenGeoHub"
 )
 
-# Set API database to OpenLandMap
+# Set API database
 db_file <- system.file("db/openlandmap.rds", package = "openstac")
 api <- set_db(api, driver = "local", file = db_file)
 
