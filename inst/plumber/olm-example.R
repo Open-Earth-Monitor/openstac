@@ -1,48 +1,31 @@
-#* @apiTitle OpenLandMap STAC API
-#* @apiDescription Spatio-Temporal Asset Catalog for global layers provided by OpenLandMap and maintaned by OpenGeoHub Foundation
+#* @apiTitle OpenLandMap STAC API Example
+#* @apiDescription Example of Spatio-Temporal Asset Catalog for global layers provided by OpenLandMap and maintaned by OpenGeoHub Foundation
 #* @apiVersion 1.0.0
 #* @apiBasePath /
-
-# Install openstac
-remotes::install_github("rolfsimoes/openstac")
 
 # Load libraries
 library(openstac)
 library(plumber)
-library(promises)
 
-# Set number of parallel processes to serve the API
-future::plan(future::multisession(workers = 2))
+# A list of all conformance classes specified in a standard that the
+# server conforms to.
+conforms_to <- c(
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
+)
 
 # Create an STAC server API object
 api <- create_stac(
   id = "openlandmap",
-  title = "OpenLandMap STAC API",
-  description = "Searchable spatiotemporal assets of OpenLandMap hosted by OpenGeoHub"
+  title = "OpenLandMap STAC API Example",
+  description = "Example of Spatio-Temporal Asset Catalog for global layers provided by OpenLandMap and maintaned by OpenGeoHub Foundation",
+  conforms_to = conforms_to
 )
 
 # Set API database
-db_file <- system.file("db/openlandmap.rds", package = "openstac")
+db_file <- system.file("db/olm-example.rds", package = "openstac")
 api <- set_db(api, driver = "local", file = db_file)
-
-#* Custom error handling
-#* @plumber
-function(pr) {
-  pr_set_error(pr, api_error_handler)
-}
-
-#* Enable Cross-origin Resource Sharing
-#* Based on https://github.com/rstudio/plumber/issues/66#issuecomment-418660334
-#* @filter cors
-function(req, res) {
-  res$setHeader("Access-Control-Allow-Origin", "*")
-  if (req$REQUEST_METHOD != "OPTIONS") plumber::forward()
-  res$setHeader("Access-Control-Allow-Methods", "*")
-  res$setHeader("Access-Control-Allow-Headers",
-                req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS)
-  res$status <- 200
-  return(list())
-}
 
 #* Landing page
 #* @get /
@@ -193,77 +176,6 @@ function(req,
     status = 400,
     "collections parameter must be provided"
   )
-  if (!is.null(collections)) {
-    collections <- parse_str(collections)
-    check_collections(collections)
-  }
-  if (!is.null(page)) {
-    page <- parse_int(page[[1]])
-    check_page(page)
-  }
-  # call api search
-  api_search(
-    api = api,
-    req = req,
-    res = res,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    intersects = intersects,
-    ids = ids,
-    collections = collections,
-    page = page
-  )
-}
-
-#* Search endpoint
-#* @post /search
-#* @serializer unboxedJSON
-#* @tag 'STAC API v1.0.0'
-function(req, res) {
-  # get POST parameters
-  limit <- req$argsBody$limit
-  bbox <- req$argsBody$bbox
-  datetime <- req$argsBody$datetime
-  intersects <- req$argsBody$intersects
-  ids <- req$argsBody$ids
-  collections <- req$argsBody$collections
-  # set defaults
-  if (is.null(limit)) limit <- 10
-  if (is.null(page)) page <- 1
-  # check parameters
-  if (!is.null(limit)) {
-    limit <- parse_int(limit[[1]])
-    check_limit(limit, min = 1, max = 10000)
-  }
-  if (missing(bbox)) bbox <- NULL
-  if (missing(intersects)) intersects <- NULL
-  api_stopifnot(
-    is.null(bbox) || is.null(intersects),
-    status = 400,
-    "only one of either intersects or bbox may be provided"
-  )
-  if (!is.null(bbox)) {
-    bbox <- parse_dbl(bbox)
-    check_bbox(bbox)
-  }
-  if (missing(datetime)) datetime <- NULL
-  if (!is.null(datetime)) {
-    datetime <- parse_datetime(datetime[[1]])
-    check_datetime(datetime)
-  }
-  method <- get_method(req)
-  if (!is.null(intersects)) {
-    api_stopifnot(
-      method == "POST",
-      status = 405,
-      "the request method is not supported"
-    )
-    intersects <- parse_json(intersects)
-    check_intersects(intersects)
-  }
-  if (missing(ids)) ids <- NULL
-  if (!is.null(ids)) ids <- parse_str(ids)
   if (!is.null(collections)) {
     collections <- parse_str(collections)
     check_collections(collections)

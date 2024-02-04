@@ -4,21 +4,35 @@
 #* @apiBasePath /
 
 # Install openstac
-remotes::install_github("rolfsimoes/openstac")
+remotes::install_github("rolfsimoes/openstac", quiet = TRUE)
 
 # Load libraries
 library(openstac)
 library(plumber)
 library(promises)
+library(future)
 
-# Set number of parallel processes to serve the API
+# Set number of processes to serve the API
 future::plan(future::multisession(workers = 2))
+
+# A list of all conformance classes specified in a standard that the
+# server conforms to.
+conforms_to <- c(
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
+  "https://api.stacspec.org/v1.0.0/core",
+  "https://api.stacspec.org/v1.0.0/collections",
+  "https://api.stacspec.org/v1.0.0/item-search",
+  "https://api.stacspec.org/v1.0.0/ogcapi-features"
+)
 
 # Create an STAC server API object
 api <- create_stac(
   id = "openlandmap",
   title = "OpenLandMap STAC API",
-  description = "Searchable spatiotemporal assets of OpenLandMap hosted by OpenGeoHub"
+  description = "Spatio-Temporal Asset Catalog for global layers provided by OpenLandMap and maintaned by OpenGeoHub Foundation",
+  conforms_to = conforms_to
 )
 
 # Set API database
@@ -31,16 +45,9 @@ function(pr) {
 }
 
 #* Enable Cross-origin Resource Sharing
-#* Based on https://github.com/rstudio/plumber/issues/66#issuecomment-418660334
 #* @filter cors
 function(req, res) {
-  res$setHeader("Access-Control-Allow-Origin", "*")
-  if (req$REQUEST_METHOD != "OPTIONS") plumber::forward()
-  res$setHeader("Access-Control-Allow-Methods", "*")
-  res$setHeader("Access-Control-Allow-Headers",
-                req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS)
-  res$status <- 200
-  return(list())
+  api_cors_handler(req, res, origin = "*", methods = "*")
 }
 
 #* Landing page
@@ -111,17 +118,19 @@ function(req,
     page <- parse_int(page[[1]])
     check_page(page)
   }
-  # call api items
-  api_items(
-    api = api,
-    req = req,
-    res = res,
-    collection_id = collection_id,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    page = page
-  )
+  # call api items in asynchronously
+  promises::future_promise({
+    api_items(
+      api = api,
+      req = req,
+      res = res,
+      collection_id = collection_id,
+      limit = limit,
+      bbox = bbox,
+      datetime = datetime,
+      page = page
+    )
+  })
 }
 
 #* Item endpoint
@@ -200,19 +209,21 @@ function(req,
     page <- parse_int(page[[1]])
     check_page(page)
   }
-  # call api search
-  api_search(
-    api = api,
-    req = req,
-    res = res,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    intersects = intersects,
-    ids = ids,
-    collections = collections,
-    page = page
-  )
+  # call api search asynchronously
+  promises::future_promise({
+    api_search(
+      api = api,
+      req = req,
+      res = res,
+      limit = limit,
+      bbox = bbox,
+      datetime = datetime,
+      intersects = intersects,
+      ids = ids,
+      collections = collections,
+      page = page
+    )
+  })
 }
 
 #* Search endpoint
@@ -271,17 +282,19 @@ function(req, res) {
     page <- parse_int(page[[1]])
     check_page(page)
   }
-  # call api search
-  api_search(
-    api = api,
-    req = req,
-    res = res,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    intersects = intersects,
-    ids = ids,
-    collections = collections,
-    page = page
-  )
+  # call api search asynchronously
+  promises::future_promise({
+    api_search(
+      api = api,
+      req = req,
+      res = res,
+      limit = limit,
+      bbox = bbox,
+      datetime = datetime,
+      intersects = intersects,
+      ids = ids,
+      collections = collections,
+      page = page
+    )
+  })
 }

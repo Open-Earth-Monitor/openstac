@@ -57,6 +57,7 @@ create_db <- function(catalog_url, db_file, overwrite = FALSE) {
     # skip if collections is already in db and overwrite is FALSE
     if (collection$id %in% names(db$collections) && !overwrite) next
     db <- update_db(db, collection)
+    db$datetime <- Sys.time()
     saveRDS(db, db_file)
   }
 }
@@ -64,7 +65,6 @@ create_db <- function(catalog_url, db_file, overwrite = FALSE) {
 # OpenLandMap
 create_db(
   catalog_url = "https://s3.eu-central-1.wasabisys.com/stac/openlandmap/catalog.json",
-  db_file = "inst/db/openlandmap.rds",
+  db_file = "docker/olm/openlandmap.rds",
   overwrite = FALSE
 )
-

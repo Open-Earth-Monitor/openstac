@@ -86,6 +86,21 @@ api_search <- function(api,
   UseMethod("api_search", api)
 }
 
+# Based on https://github.com/rstudio/plumber/issues/66#issuecomment-418660334
+#' @export
+api_cors_handler <- function(req, res, origin = "*", methods = "*") {
+  res$setHeader("Access-Control-Allow-Origin", origin)
+  if (req$REQUEST_METHOD != "OPTIONS") {
+    plumber::forward()
+  } else {
+    res$setHeader("Access-Control-Allow-Methods", methods)
+    res$setHeader("Access-Control-Allow-Headers",
+                  req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS)
+    res$status <- 200
+    return(list())
+  }
+}
+
 #' @export
 api_error_handler <- function(req, res, err) {
   if (is.null(err$status)) err$status <- 500

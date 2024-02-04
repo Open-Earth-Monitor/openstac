@@ -1,15 +1,3 @@
-# A list of all conformance classes specified in a standard that the
-# server conforms to.
-stac_conforms_to <- c(
-  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
-  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
-  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
-  "https://api.stacspec.org/v1.0.0/core",
-  "https://api.stacspec.org/v1.0.0/collections",
-  "https://api.stacspec.org/v1.0.0/item-search",
-  "https://api.stacspec.org/v1.0.0/ogcapi-features/"
-)
-
 stac_version <- "1.0.0"
 
 #' @export
@@ -18,7 +6,7 @@ create_stac <- function(id, title, description, conforms_to = NULL, ...) {
     api_class = c("stac", "ogcapi"),
     title = title,
     description = description,
-    conforms_to = c(stac_conforms_to, conforms_to),
+    conforms_to = conforms_to,
     stac_version = stac_version,
     id = id, ...
   )
