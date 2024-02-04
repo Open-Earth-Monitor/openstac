@@ -22,8 +22,7 @@ api <- create_stac(
 )
 
 # Set API database
-db_file <- system.file("db/openlandmap.rds", package = "openstac")
-api <- set_db(api, driver = "local", file = db_file)
+api <- set_db(api, driver = "local", file = "/openstac/openlandmap.rds")
 
 #* Custom error handling
 #* @plumber

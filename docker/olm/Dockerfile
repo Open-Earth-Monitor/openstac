@@ -1,0 +1,6 @@
+FROM rstudio/plumber
+RUN apt update -y && apt install -y libudunits2-dev libgdal-dev libproj-dev
+RUN R -e "install.packages('sf')"
+RUN R -e "install.packages('future')" -e "install.packages('remotes')"
+RUN R -e "remotes::install_github('rolfsimoes/rstac@b-1.0.0-beta')"
+RUN R -e "remotes::install_github('rolfsimoes/openstac@main')"

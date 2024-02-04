@@ -1,0 +1,9 @@
+services:
+  olm:
+    build: ./olm/
+    volumes:
+     - ./olm:/openstac
+    restart: always
+    ports:
+     - "8000:8000"
+    command: "/openstac/olm-stac.R"
