@@ -1,10 +1,11 @@
-library(rstac)
-library(sf)
-
 update_db <- function(db, collection) {
   if (!requireNamespace("rstac"))
     stop("Package rstac was not found. ",
          'Please, run `install.packages("rstac")` to install it.',
+         call. = FALSE)
+  if (!requireNamespace("sf"))
+    stop("Package sf was not found. ",
+         'Please, run `install.packages("sf")` to install it.',
          call. = FALSE)
   # item fixing function
   fix_item <- function(item, collection_id) {
@@ -27,8 +28,13 @@ update_db <- function(db, collection) {
   }
   # fetch items
   items <- rstac::read_items(collection, limit = 10000, page = 1)
-  # fix items
+  # fix collection
   collection$links <- NULL
+  collection$extent$spatial$bbox[[1]] <- lapply(collection$extent$spatial$bbox[[1]], as.numeric)
+  if (abs(collection$extent$spatial$bbox[[1]][[2]]) > 90) {
+    collection$extent$spatial$bbox[[1]] <- collection$extent$spatial$bbox[[1]][c(2, 1, 4, 3)]
+  }
+  # fix items
   items$features <- lapply(items$features, fix_item, collection$id)
   items$links <- NULL
   # update db
@@ -51,6 +57,7 @@ create_db <- function(catalog_url, db_file, overwrite = FALSE) {
     # skip if collections is already in db and overwrite is FALSE
     if (collection$id %in% names(db$collections) && !overwrite) next
     db <- update_db(db, collection)
+    db$datetime <- Sys.time()
     saveRDS(db, db_file)
   }
 }
@@ -58,6 +65,6 @@ create_db <- function(catalog_url, db_file, overwrite = FALSE) {
 # OpenLandMap
 create_db(
   catalog_url = "https://s3.eu-central-1.wasabisys.com/stac/openlandmap/catalog.json",
-  db_file = "inst/local_db/openlandmap.rds",
+  db_file = "docker/olm/openlandmap.rds",
   overwrite = FALSE
 )

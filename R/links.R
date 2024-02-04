@@ -1,113 +1,184 @@
 new_link <- function(rel, href, ...) {
   dots <- list(...)
-  c(list(rel = rel, href = href), dots)
+  not_null <- !vapply(dots, is.null, logical(1), USE.NAMES = FALSE)
+  c(list(rel = rel, href = href), dots[not_null])
 }
 
-add_link <- function(links, rel, href, ...) {
-  c(links, list(new_link(rel, href, ...)))
+get_link <- function(host, ...) {
+  dots <- c(...)
+  segments <- unname(dots)
+  params <- NULL
+  if (!is.null(names(dots))) {
+    segments <- unname(dots[names(dots) == ""])
+    params <- dots[names(dots) != ""]
+  }
+  path <- paste0(segments, collapse = "/")
+  href <- paste0(host, path)
+  query <- paste(names(params), unname(params), sep = "=", collapse = "&")
+  if (query != "") href <- paste0(href, "?", query)
+  href
 }
 
 #' @export
-doc_links_landing_page <- function(doc, host, ...) {
+add_link <- function(doc, rel, href, ...) {
+  doc$links <- c(doc$links, list(new_link(rel, href, ...)))
+  doc
+}
+
+links_landing_page <- function(doc, api, req, res, ...) {
+  host <- get_host(api, req)
   doc$links  <- list(
     new_link(
+      rel = "root",
+      href = get_link(host, "/"),
+      type = "application/json"
+    ),
+    new_link(
       rel = "self",
-      href = get_endpoint(host, "/")
+      href = get_link(host, "/"),
+      type = "application/json"
     ),
     new_link(
       rel = "conformance",
-      href = get_endpoint(host, "/conformance")
+      href = get_link(host, "/conformance"),
+      type = "application/json"
     ),
     new_link(
       rel = "data",
-      href = get_endpoint(host, "/collections")
+      href = get_link(host, "/collections"),
+      type = "application/json"
     ),
     new_link(
       rel = "search",
-      href = get_endpoint(host, "/search")
+      href = get_link(host, "/search"),
+      type = "application/geo+json",
+      title = "STAC search",
+      method = "GET"
+    ),
+    new_link(
+      rel = "search",
+      href = get_link(host, "/search"),
+      type = "application/geo+json",
+      title = "STAC search",
+      method = "POST"
+    ),
+    new_link(
+      rel = "service-doc",
+      href = get_link(host, "/__docs__/"),
+      type = "text/html",
+      title = "the API documentation"
+    ),
+    new_link(
+      rel = "service-spec",
+      href = get_link(host, "/openapi.json"),
+      type = "application/vnd.oai.openapi+json;version=3.0",
+      title = "API conformance classes implemented by this server"
     )
+  )
+  db <- api_db(api)
+  doc$links <- c(
+    doc$links,
+    lapply(db_collections(db), function(doc) {
+      new_link(
+        rel = "child",
+        href = get_link(host, "/collections", doc$id),
+        type = "application/json",
+        title = doc$title
+      )
+    })
   )
   doc
 }
 
-#' @export
-doc_links_collection <- function(doc, host, ...) {
+links_collection <- function(doc, api, req, res, ...) {
+  host <- get_host(api, req)
   doc$links <- list(
     new_link(
       rel = "root",
-      href = get_endpoint(host, "/")
+      href = get_link(host, "/"),
+      type = "application/json"
     ),
     new_link(
       rel = "self",
-      href = get_endpoint(host, "/collections", doc$id)
+      href = get_link(host, "/collections", doc$id),
+      type = "application/json"
     ),
     new_link(
       rel = "item",
-      href = get_endpoint(host, "/collections", doc$id, "items")
+      href = get_link(host, "/collections", doc$id, "items"),
+      type = "application/geo+json"
     )
   )
   doc
 }
 
-#' @export
-doc_links_collections <- function(doc, host, ...) {
-  # add collection links
+links_collections <- function(doc, api, req, res, ...) {
   doc$collections <- lapply(doc$collections, function(collection) {
-    doc_links_collection(collection, host)
+    links_collection(collection, api, req, res)
   })
+  host <- get_host(api, req)
   doc$links <- list(
     new_link(
       rel = "root",
-      href = get_endpoint(host, "/")
+      href = get_link(host, "/"),
+      type = "application/json"
     ),
     new_link(
       rel = "self",
-      href = get_endpoint(host, "/collections")
+      href = get_link(host, "/collections"),
+      type = "application/json"
     )
   )
   doc
 }
 
-#' @export
-doc_links_item <- function(doc, host, collection_id, ...) {
+links_item <- function(doc, api, req, res, collection_id, ...) {
+  host <- get_host(api, req)
   doc$links <- list(
     new_link(
       rel = "root",
-      href = get_endpoint(host, "/")
+      href = get_link(host, "/"),
+      type = "application/json"
     ),
     new_link(
       rel = "self",
-      href = get_endpoint(host, "/collections", collection_id, "items", doc$id)
+      href = get_link(host, "/collections", collection_id,
+                          "items", doc$id),
+      type = "application/geo+json"
     ),
     new_link(
       rel = "collection",
-      href = get_endpoint(host, "/collections", collection_id)
+      href = get_link(host, "/collections", collection_id),
+      type = "application/json"
     )
   )
   doc
 }
 
-#' @export
-doc_links_items <- function(doc,
-                            host,
-                            collection_id,
-                            limit,
-                            bbox,
-                            datetime,
-                            page, ...) {
+links_items <- function(doc,
+                        api,
+                        req,
+                        res,
+                        collection_id,
+                        limit,
+                        bbox,
+                        datetime,
+                        page, ...) {
   pages <- get_pages(doc, limit)
   # update item links
   doc$features <- lapply(doc$features, function(item) {
-    doc_links_item(item, host, collection_id)
+    links_item(item, api, req, res, collection_id)
   })
+  host <- get_host(api, req)
   doc$links <- list(
     new_link(
       rel = "root",
-      href = get_endpoint(host, "/")
+      href = get_link(host, "/"),
+      type = "application/json"
     ),
     new_link(
       rel = "self",
-      href = get_endpoint(
+      href = get_link(
         host = host,
         "/collections",
         collection_id,
@@ -116,19 +187,21 @@ doc_links_items <- function(doc,
         bbox = bbox,
         datetime = datetime_as_str(datetime),
         page = page
-      )
+      ),
+      type = "application/geo+json"
     ),
     new_link(
       rel = "collection",
-      href = get_endpoint(host, "/collections", collection_id)
+      href = get_link(host, "/collections", collection_id),
+      type = "application/json"
     )
   )
   # add navigation links
   if (page > 1 && page <= pages)
-    doc$links <- add_link(
-      doc$links,
+    doc <- add_link(
+      doc = doc,
       rel = "prev",
-      href = get_endpoint(
+      href = get_link(
         host = host,
         "/collections",
         collection_id,
@@ -137,13 +210,14 @@ doc_links_items <- function(doc,
         bbox = bbox,
         datetime = datetime_as_str(datetime),
         page = page - 1
-      )
+      ),
+      type = "application/geo+json"
     )
   if (page < pages)
-    doc$links <- add_link(
-      doc$links,
+    doc <- add_link(
+      doc = doc,
       rel = "next",
-      href = get_endpoint(
+      href = get_link(
         host = host,
         "/collections",
         collection_id,
@@ -152,39 +226,43 @@ doc_links_items <- function(doc,
         bbox = bbox,
         datetime = datetime_as_str(datetime),
         page = page + 1
-      )
+      ),
+      type = "application/geo+json"
     )
   doc
 }
 
-#' @export
-doc_links_search <- function(doc,
-                             host,
-                             limit,
-                             bbox,
-                             datetime,
-                             ids,
-                             collections,
-                             page,
-                             method, ...) {
+links_search <- function(doc,
+                         api,
+                         req,
+                         res,
+                         limit,
+                         bbox,
+                         datetime,
+                         ids,
+                         collections,
+                         page, ...) {
   pages <- get_pages(doc, limit)
   # update item links
   doc$features <- lapply(doc$features, function(item) {
-    doc_links_item(item, host, item$collection)
+    links_item(item, api, req, res, item$collection)
   })
+  host <- get_host(api, req)
   doc$links <- list(
     new_link(
       rel = "root",
-      href = get_endpoint(host, "/")
+      href = get_link(host, "/"),
+      type = "application/json"
     )
   )
+  method <- get_method(req)
   # add navigation links
   if (method == "GET") {
     if (page > 1 && page <= pages)
-      doc$links <- add_link(
-        doc$links,
+      doc <- add_link(
+        doc = doc,
         rel = "prev",
-        href = get_endpoint(
+        href = get_link(
           host = host,
           "/search",
           limit = limit,
@@ -193,13 +271,14 @@ doc_links_search <- function(doc,
           ids = ids,
           collections = collections,
           page = page - 1
-        )
+        ),
+        type = "application/geo+json"
       )
     if (page < pages)
-      doc$links <- add_link(
-        doc$links,
+      doc <- add_link(
+        doc = doc,
         rel = "next",
-        href = get_endpoint(
+        href = get_link(
           host = host,
           "/search",
           limit = limit,
@@ -208,34 +287,38 @@ doc_links_search <- function(doc,
           ids = ids,
           collections = collections,
           page = page + 1
-        )
+        ),
+        type = "application/geo+json"
       )
   } else if (method == "POST") {
     doc$links <- list(
       new_link(
         rel = "root",
-        href = get_endpoint(host, "/")
+        href = get_link(host, "/"),
+        type = "application/json"
       )
     )
     if (page > 1 && page <= pages)
-      doc$links <- add_link(
-        doc$links,
+      doc <- add_link(
+        doc = doc,
         rel = "prev",
-        href = get_endpoint(host, "/search"),
+        href = get_link(host, "/search"),
         body = list(
           page = page - 1
         ),
-        merge = TRUE
+        merge = TRUE,
+        type = "application/geo+json"
       )
     if (page < pages)
-      doc$links <- add_link(
-        doc$links,
+      doc <- add_link(
+        doc = doc,
         rel = "next",
-        href = get_endpoint(host, "/search"),
+        href = get_link(host, "/search"),
         body = list(
           page = page + 1
         ),
-        merge = TRUE
+        merge = TRUE,
+        type = "application/geo+json"
       )
   }
   doc

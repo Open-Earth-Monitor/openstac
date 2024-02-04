@@ -1,49 +1,63 @@
-library(openstac)
-
-#* @apiTitle STAC API
-#* @apiDescription R STAC API server.
+#* @apiTitle OpenLandMap STAC API Example
+#* @apiDescription Example of Spatio-Temporal Asset Catalog for global layers provided by OpenLandMap and maintaned by OpenGeoHub Foundation
 #* @apiVersion 1.0.0
+#* @apiBasePath /
 
-# Create an STAC server API object
-api <- create_api_stac(
-  title = "R STAC API server",
-  description = "This is a STAC API 1.0.0 compliant R backend."
+# Load libraries
+library(openstac)
+library(plumber)
+
+# A list of all conformance classes specified in a standard that the
+# server conforms to.
+conforms_to <- c(
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
+  "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
 )
 
-# Set API database to OpenLandMap
-db_file <- system.file("db/openlandmap.rds", package = "stacserver")
+# Create an STAC server API object
+api <- create_stac(
+  id = "openlandmap",
+  title = "OpenLandMap STAC API Example",
+  description = "Example of Spatio-Temporal Asset Catalog for global layers provided by OpenLandMap and maintaned by OpenGeoHub Foundation",
+  conforms_to = conforms_to
+)
+
+# Set API database
+db_file <- system.file("db/olm-example.rds", package = "openstac")
 api <- set_db(api, driver = "local", file = db_file)
 
 #* Landing page
 #* @get /
 #* @serializer unboxedJSON
+#* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_landing_page(api) |>
-    doc_links_landing_page(get_host(req))
+  api_landing_page(api, req, res)
 }
 
 #* Conformance endpoint
 #* @get /conformance
 #* @serializer unboxedJSON
+#* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_conformance(api)
+  api_conformance(api, req, res)
 }
 
 #* Collections endpoint
 #* @get /collections
 #* @serializer unboxedJSON
+#* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_collections(api) |>
-    doc_links_collections(get_host(req))
+  api_collections(api, req, res)
 }
 
 #* Collection endpoint
 #* @get /collections/<collection_id>
 #* @param collection_id:str The ID of the collection
 #* @serializer unboxedJSON
+#* @tag 'STAC API v1.0.0'
 function(req, res, collection_id) {
-  api_collection(api, collection_id) |>
-    doc_links_collection(get_host(req))
+  api_collection(api, req, res, collection_id)
 }
 
 #* Items endpoint
@@ -54,6 +68,7 @@ function(req, res, collection_id) {
 #* @param datetime:str Datetime filter
 #* @param page:int Pagination parameter (default: 1)
 #* @serializer unboxedJSON
+#* @tag 'STAC API v1.0.0'
 function(req,
          res,
          collection_id,
@@ -81,17 +96,10 @@ function(req,
     check_page(page)
   }
   # call api items
-  doc <- api_items(
+  api_items(
     api = api,
-    collection_id = collection_id,
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    page = page
-  )
-  doc_links_items(
-    doc = doc,
-    host = get_host(req),
+    req = req,
+    res = res,
     collection_id = collection_id,
     limit = limit,
     bbox = bbox,
@@ -105,14 +113,13 @@ function(req,
 #* @param collection_id:str The ID of the collection
 #* @param item_id:str The ID of the item
 #* @serializer unboxedJSON
+#* @tag 'STAC API v1.0.0'
 function(req, res, collection_id, item_id) {
-  api_item(api, collection_id, item_id) |>
-    doc_links_item(get_host(req), collection_id)
+  api_item(api, req, res, collection_id, item_id)
 }
 
 #* Search endpoint
 #* @get /search
-#* @post /search
 #* @param limit:int Maximum number of features to return (default: 10)
 #* @param bbox:str Bounding box (minx,miny,maxx,maxy)
 #* @param datetime:str Datetime filter
@@ -121,6 +128,7 @@ function(req, res, collection_id, item_id) {
 #* @param collections:str Array of collection ID
 #* @param page:int Pagination parameter (default: 1)
 #* @serializer unboxedJSON
+#* @tag 'STAC API v1.0.0'
 function(req,
          res,
          limit = 10,
@@ -163,6 +171,11 @@ function(req,
   }
   if (missing(ids)) ids <- NULL
   if (!is.null(ids)) ids <- parse_str(ids)
+  api_stopifnot(
+    !missing(collections),
+    status = 400,
+    "collections parameter must be provided"
+  )
   if (!is.null(collections)) {
     collections <- parse_str(collections)
     check_collections(collections)
@@ -172,8 +185,10 @@ function(req,
     check_page(page)
   }
   # call api search
-  doc <- api_search(
+  api_search(
     api = api,
+    req = req,
+    res = res,
     limit = limit,
     bbox = bbox,
     datetime = datetime,
@@ -181,16 +196,5 @@ function(req,
     ids = ids,
     collections = collections,
     page = page
-  )
-  doc_links_search(
-    doc = doc,
-    host = get_host(req),
-    limit = limit,
-    bbox = bbox,
-    datetime = datetime,
-    ids = ids,
-    collections = collections,
-    page = page,
-    method = method
   )
 }
