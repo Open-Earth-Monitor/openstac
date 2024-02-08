@@ -1,3 +1,5 @@
+library(mongolite)
+
 update_db <- function(db, collection) {
   if (!requireNamespace("rstac"))
     stop("Package rstac was not found. ",
@@ -45,13 +47,14 @@ update_db <- function(db, collection) {
   }
 }
 
-create_db <- function(catalog_url, mongodb, overwrite = FALSE) {
+create_db <- function(catalog_url, db_name, db_url, overwrite = FALSE) {
   rel <- NULL
   catalog <- rstac::stac_read(catalog_url)
   # prepare db
-  db <- list(collections = list(), items = list())
-  if (file.exists(db_file))
-    db <- readRDS(db_file)
+  db <- list(
+    collections = mongolite::mongo(collection = "collections", db = db_name, url = db_url),
+    items = mongolite::mongo(collection = "items", db = db_name, url = db_url)
+  )
   # filter collections
   links <- rstac::links(catalog, rel == "child")
   for (link in links) {
@@ -66,6 +69,7 @@ create_db <- function(catalog_url, mongodb, overwrite = FALSE) {
 # OpenLandMap
 create_db(
   catalog_url = "https://s3.eu-central-1.wasabisys.com/stac/openlandmap/catalog.json",
-  db_file = "docker/olm/openlandmap.rds",
+  db_name = "docker/olm/openlandmap.rds",
+  db_url = "mongodb::/localhost:3453",
   overwrite = FALSE
 )
