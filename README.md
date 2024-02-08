@@ -30,8 +30,7 @@ You can install `openstac` from
 package:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("Open-Earth-Monitor/openstac")
+remotes::install_github("Open-Earth-Monitor/openstac")
 ```
 
 ## Usage
@@ -45,9 +44,10 @@ To use `openstac`, follow these steps:
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example:
 
 ``` r
+
 #* @apiTitle STAC API
 #* @apiDescription R STAC API server.
 #* @apiVersion 1.0.0
@@ -55,14 +55,14 @@ This is a basic example which shows you how to solve a common problem:
 library(openstac)
 
 # Create an STAC server API object
-api <- create_api_stac(
+api <- create_stac(
   id = "my_stac",
   title = "R STAC API server",
   description = "This is a STAC API 1.0.0 compliant R backend."
 )
 
 # Set API database
-db_file <- system.file("db/openlandmap.rds", package = "openstac")
+db_file <- system.file("db/olm-example.rds", package = "openstac")
 api <- set_db(api, driver = "local", file = db_file)
 
 #* Landing page
@@ -155,6 +155,16 @@ function(req,
 function(req, res, collection_id, item_id) {
   api_item(api, req, res, collection_id, item_id)
 }
+```
+
+To run this example, save this code in a file, e.g. `my_api.R` and run:
+
+``` r
+
+library(plumber)
+
+plumber::plumb("my_api.R") |> 
+  plumber::run(host = "127.0.0.1", port = 8888)
 ```
 
 ## Documentation
