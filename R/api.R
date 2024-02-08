@@ -87,6 +87,7 @@ api_search <- function(api,
 }
 
 # Based on https://github.com/rstudio/plumber/issues/66#issuecomment-418660334
+# HTTP CORS support
 #' @export
 api_cors_handler <- function(req, res, origin = "*", methods = "*") {
   res$setHeader("Access-Control-Allow-Origin", origin)
