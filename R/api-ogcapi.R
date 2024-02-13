@@ -29,14 +29,14 @@ api_conformance.ogcapi <- function(api, req, res, ...) {
 
 #' @export
 api_collections.ogcapi <- function(api, req, res, ...) {
-  db <- api_db(api)
+  db <- get_db(api)
   list(collections = db_collections(db)) |>
     links_collections(api, req, res)
 }
 
 #' @export
 api_collection.ogcapi <- function(api, req, res, collection_id, ...) {
-  db <- api_db(api)
+  db <- get_db(api)
   check_collection_in_db(db, collection_id)
   db_collection(db, collection_id) |>
     links_collection(api, req, res)
@@ -51,7 +51,7 @@ api_items.ogcapi <- function(api,
                              bbox,
                              datetime,
                              page, ...) {
-  db <- api_db(api)
+  db <- get_db(api)
   check_collection_in_db(db, collection_id)
   doc <- db_items(
     db = db,
@@ -76,7 +76,7 @@ api_items.ogcapi <- function(api,
 
 #' @export
 api_item.ogcapi <- function(api, req, res, collection_id, item_id, ...) {
-  db <- api_db(api)
+  db <- get_db(api)
   check_collection_in_db(db, collection_id)
   check_item_in_db(db, collection_id, item_id)
   db_item(db, collection_id, item_id) |>

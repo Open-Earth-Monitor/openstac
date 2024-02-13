@@ -68,7 +68,7 @@ api_search.stac <- function(api,
                             ids,
                             collections,
                             page, ...) {
-  db <- api_db(api)
+  db <- get_db(api)
   check_collection_in_db(db, collections)
   doc <- db_search(
     db = db,

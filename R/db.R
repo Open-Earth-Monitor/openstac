@@ -1,5 +1,16 @@
 drivers <- function() c("local")
 
+#' @export
+set_db <- function(api, driver, ...) {
+  db <- new_db(driver, ...)
+  api_attr(api, "db") <- db
+}
+
+#' @export
+get_db <- function(api) {
+  api_attr(api, "db")
+}
+
 new_db <- function(driver, ...) {
   stopifnot(is.character(driver))
   stopifnot(driver %in% drivers())

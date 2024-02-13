@@ -75,7 +75,7 @@ links_landing_page <- function(doc, api, req, res, ...) {
       title = "API conformance classes implemented by this server"
     )
   )
-  db <- api_db(api)
+  db <- get_db(api)
   doc$links <- c(
     doc$links,
     lapply(db_collections(db), function(doc) {
