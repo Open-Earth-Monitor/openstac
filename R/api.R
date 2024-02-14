@@ -8,29 +8,44 @@
 #'
 #' Users should parse and validate parameters such as `collection_id`,
 #' `bbox`, and `datetime` before calling these functions.
-#' `openstac` provides functions like `parse_json()`, `parse_datetime()`,
-#' `parse_dbl()`, `parse_int()`, and `parse_str()` to facilitate this process.
+#' `openstac` provides functions like `parse_geojson()`, `parse_datetime()`,
+#' `parse_dbl()`, `parse_int()`, and `parse_str()` to facilitate this
+#' process.
 #'
 #' \itemize{
 #'
-#' \item `api_landing_page`: handles the STAC `/` endpoint
+#' \item `create_ogcapi`: Creates an API object for OGC API Features.
 #'
-#' \item `api_conformance`: handles the STAC `/conformance` endpoint
+#' \item `create_stac`: Creates an API object for STAC.
 #'
-#' \item `api_collections`: handles the STAC `/collections` endpoint
+#' \item `api_landing_page`: Handles the STAC `/` endpoint.
 #'
-#' \item `api_collection`: handles the STAC
-#'   `/collection/\{collection_id\}` endpoint
+#' \item `api_conformance`: Handles the STAC `/conformance` endpoint.
 #'
-#' \item `api_items`: handles the STAC
-#'   `/collection/\{collection_id\}/items` endpoint
+#' \item `api_collections`: Handles the STAC `/collections` endpoint.
 #'
-#' \item `api_item`: handles the STAC
-#'   `/collection/\{collection_id\}/item/\{item_id\}` endpoint
+#' \item `api_collection`: Handles the STAC
+#'   `/collection/{collection_id}` endpoint.
 #'
-#' \item `api_search`: handles the STAC `/search` endpoint
+#' \item `api_items`: Handles the STAC
+#'   `/collection/{collection_id}/items` endpoint.
+#'
+#' \item `api_item`: Handles the STAC
+#'   `/collection/{collection_id}/item/{item_id}` endpoint.
+#'
+#' \item `api_search`: Handles the STAC `/search` endpoint.
 #'
 #' }
+#'
+#' @param id A character string specifying the id of the API.
+#'
+#' @param title A character string specifying the title of the API.
+#'
+#' @param description A character string describing the API.
+#'
+#' @param conforms_to A character vector specifying the conformance
+#'   standards adhered to by the API. This parameter can be NULL or
+#'   contain additional conformance standards to add to the defaults.
 #'
 #' @param api An object representing the API. This object is typically
 #'   created using either the `create_stac` or `create_ogcapi`
@@ -45,12 +60,15 @@
 #' @param collection_id The identifier of the collection. This parameter
 #'   specifies which collection the request is targeting.
 #'
+#' @param item_id The identifier of the item within the specified collection.
+#'   This parameter specifies which item the request is targeting.
+#'
 #' @param limit The maximum number of items to return. If not specified,
 #'   the default value is used.
 #'
 #' @param bbox The bounding box for spatial filtering, specified as a
 #'   numeric vector of four coordinates
-#'   (`minlon`, `minlat`, `maxlon`, `maxlat`). Use `parse_dbl()` to
+#'   (`long_min`, `lat_min`, `long_max`, `lat_max`). Use `parse_dbl()` to
 #'   convert comma-separated string to numeric vector.
 #'
 #' @param datetime The temporal filter for items. It must be specified
@@ -59,24 +77,38 @@
 #'   string to this object.
 #'
 #' @param intersects The spatial filter for items, specified as a GeoJSON
-#'   geometry object representing the area of interest. Use `parse_json()`
+#'   geometry object representing the area of interest. Use `parse_geojson()`
 #'   function to convert strings of GeoJSON geometries into an equivalent
 #'   `list()` object.
 #'
 #' @param ids A list of item identifiers to filter the search results.
-#'   Use `parse_str()` to convert a comma-separated string to character
-#'   vector.
-#' @param collections A list of collection identifiers to filter the search results.
+#'   Use `parse_str()` to convert a comma-separated string to a
+#'   character vector
+#'
+#' @param collections A list of collection identifiers to filter the
+#'   search results. Use `parse_str()` to convert a comma-separated
+#'   string to a character vector.
+#'
 #' @param page The page number of the results when paginating.
+#'
 #' @param ... Additional arguments to be passed to the method-specific
 #'   functions.
 #'
-#' @seealso \code{\link{create_stac}}, \code{\link{create_ogcapi}}
-#'   Functions for creating STAC and OGC API objects, respectively.
+#' @return For API creation functions, returns a api object. For API
+#'   handling functions, returns the document to return as response.
+#'
+#' @seealso
+#' [create_stac()], [create_ogcapi()]: Functions for creating STAC and
+#'   OGC API objects, respectively.
+#'
+#' [parse_int()], [parse_dbl()], [parse_str()], [parse_datetime()],
+#'   [parse_geojson()]: Functions to convert HTTP input strings
+#'   into R data types.
 #'
 #' @references
 #' For more information about the STAC specification,
 #' see: \url{https://stacspec.org/}
+#'
 #' For more information about the OGC API specification,
 #' see: \url{http://www.opengis.net/doc/IS/ogcapi-features-1/1.0}
 #'
@@ -159,42 +191,4 @@ api_search <- function(api,
                        collections,
                        page, ...) {
   UseMethod("api_search", api)
-}
-
-# Based on https://github.com/rstudio/plumber/issues/66#issuecomment-418660334
-# HTTP CORS support
-#' @rdname api_helpers
-#' @export
-api_cors_handler <- function(req, res, origin = "*", methods = "*") {
-  res$setHeader("Access-Control-Allow-Origin", origin)
-  if (req$REQUEST_METHOD != "OPTIONS") {
-    plumber::forward()
-  } else {
-    res$setHeader("Access-Control-Allow-Methods", methods)
-    res$setHeader("Access-Control-Allow-Headers",
-                  req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS)
-    res$status <- 200
-    return(list())
-  }
-}
-#' @rdname api_helpers
-#' @export
-api_error_handler <- function(req, res, err) {
-  if (is.null(err$status)) err$status <- 500
-  if (is.null(err$message)) err$message <- "Internal server error"
-  res$status <- err$status
-  list(code = err$status, message = paste("Error:", err$message))
-}
-#' @rdname api_helpers
-#' @export
-api_stop <- function(status, ...) {
-  stop(errorCondition(paste0(...), status = status))
-}
-#' @rdname api_helpers
-#' @export
-api_stopifnot <- function(expr, status, ...) {
-  message <- paste0(...)
-  if (!nzchar(message))
-    message <- paste(deparse(substitute(expr)), "is not TRUE")
-  if (!expr) api_stop(status, message)
 }

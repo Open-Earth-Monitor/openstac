@@ -1,5 +1,3 @@
-#' @importFrom mongolite mongo
-
 #' @export
 new_db.mongodb <- function(driver, db, url, ...) {
   # driver checkers

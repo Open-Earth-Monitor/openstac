@@ -1,5 +1,6 @@
 stac_version <- "1.0.0"
 
+#' @rdname api_handling
 #' @export
 create_stac <- function(id, title, description, conforms_to = NULL, ...) {
   create_api(
@@ -11,7 +12,7 @@ create_stac <- function(id, title, description, conforms_to = NULL, ...) {
     id = id, ...
   )
 }
-
+#' @rdname api_handling
 #' @export
 api_landing_page.stac <- function(api, req, res, ...) {
   doc <- list(
@@ -24,22 +25,22 @@ api_landing_page.stac <- function(api, req, res, ...) {
   doc <- links_landing_page(doc, api, req, res)
   doc
 }
-
+#' @rdname api_handling
 #' @export
 api_conformance.stac <- function(api, req, res, ...) {
   NextMethod("api_conformance", api)
 }
-
+#' @rdname api_handling
 #' @export
 api_collections.stac <- function(api, req, res, ...) {
   NextMethod("api_collections", api)
 }
-
+#' @rdname api_handling
 #' @export
 api_collection.stac <- function(api, req, res, collection_id, ...) {
   NextMethod("api_collection", api)
 }
-
+#' @rdname api_handling
 #' @export
 api_items.stac <- function(api,
                            req,
@@ -51,12 +52,12 @@ api_items.stac <- function(api,
                            page, ...) {
   NextMethod("api_items", api)
 }
-
+#' @rdname api_handling
 #' @export
 api_item.stac <- function(api, req, res, collection_id, item_id, ...) {
   NextMethod("api_item", api)
 }
-
+#' @rdname api_handling
 #' @export
 api_search.stac <- function(api,
                             req,

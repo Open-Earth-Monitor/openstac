@@ -127,7 +127,6 @@ function(req,
   if (missing(datetime)) datetime <- NULL
   if (!is.null(datetime)) {
     datetime <- parse_datetime(datetime[[1]])
-    check_datetime(datetime)
   }
   if (!is.null(page)) {
     page <- parse_int(page[[1]])
