@@ -1,0 +1,2 @@
+#' @importFrom jsonlite fromJSON
+NULL

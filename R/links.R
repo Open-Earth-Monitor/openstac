@@ -26,7 +26,7 @@ add_link <- function(doc, rel, href, ...) {
 }
 
 links_landing_page <- function(doc, api, req, res, ...) {
-  host <- get_host(api, req)
+  host <- get_host(req)
   doc$links  <- list(
     new_link(
       rel = "root",
@@ -75,7 +75,7 @@ links_landing_page <- function(doc, api, req, res, ...) {
       title = "API conformance classes implemented by this server"
     )
   )
-  db <- api_db(api)
+  db <- get_db(api)
   doc$links <- c(
     doc$links,
     lapply(db_collections(db), function(doc) {
@@ -91,7 +91,7 @@ links_landing_page <- function(doc, api, req, res, ...) {
 }
 
 links_collection <- function(doc, api, req, res, ...) {
-  host <- get_host(api, req)
+  host <- get_host(req)
   doc$links <- list(
     new_link(
       rel = "root",
@@ -116,7 +116,7 @@ links_collections <- function(doc, api, req, res, ...) {
   doc$collections <- lapply(doc$collections, function(collection) {
     links_collection(collection, api, req, res)
   })
-  host <- get_host(api, req)
+  host <- get_host(req)
   doc$links <- list(
     new_link(
       rel = "root",
@@ -133,7 +133,7 @@ links_collections <- function(doc, api, req, res, ...) {
 }
 
 links_item <- function(doc, api, req, res, collection_id, ...) {
-  host <- get_host(api, req)
+  host <- get_host(req)
   doc$links <- list(
     new_link(
       rel = "root",
@@ -169,7 +169,7 @@ links_items <- function(doc,
   doc$features <- lapply(doc$features, function(item) {
     links_item(item, api, req, res, collection_id)
   })
-  host <- get_host(api, req)
+  host <- get_host(req)
   doc$links <- list(
     new_link(
       rel = "root",
@@ -247,7 +247,7 @@ links_search <- function(doc,
   doc$features <- lapply(doc$features, function(item) {
     links_item(item, api, req, res, item$collection)
   })
-  host <- get_host(api, req)
+  host <- get_host(req)
   doc$links <- list(
     new_link(
       rel = "root",
