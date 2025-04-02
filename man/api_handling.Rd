@@ -146,18 +146,13 @@ references below for more details.}
 \item{handle_errors}{A logical value indicating whether to handle
 errors using the \code{openstac} default error handler. Default is \code{TRUE}.}
 
+\item{api_base_url}{A character string specifying the base URL of the API.}
+
 \item{spec_endpoint}{The endpoint where the API specification
 (OpenAPI) will be available. An \code{NULL} value disable this feature.}
 
 \item{docs_endpoint}{The endpoint where the API documentation
 (swagger) will be available. An \code{NULL} value disable this feature.}
-
-\item{req}{The request object from the \code{plumber} package, containing
-information about the HTTP request made to the API endpoint.}
-
-\item{res}{The response object from the \code{plumber} package, used to
-construct and send the HTTP response back to the client making
-the request.}
 }
 \value{
 For API creation functions, returns a api object. For API

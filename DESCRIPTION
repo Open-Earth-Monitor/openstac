@@ -22,7 +22,8 @@ Depends: R (>= 4.1.0)
 Imports: 
     jsonlite,
     plumber,
-    swagger
+    swagger,
+    sf
 Suggests:
     mongolite,
     testthat (>= 3.0.0)

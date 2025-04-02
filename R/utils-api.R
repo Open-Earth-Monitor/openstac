@@ -50,6 +50,14 @@
 #'   works if the `api_error_handler` function is handling errors in
 #'   `plumber`.
 #'
+#' @param api The API object to be associated with the `plumber` router.
+#'   This object is used to store additional information about the API
+#'   To create an API object, use the `create_api` function.
+#'
+#' @param conforms_to A list with the conformance standards adhered to
+#'   by the API. This parameter can be NULL or contain additional
+#'   conformance standards to add to the defaults.
+#'
 #' @param expr The expression to evaluate. If the expression evaluates
 #'   to FALSE, an error will be raised.
 #'
@@ -73,8 +81,10 @@ api_cors_handler <- function(req, res, origin = "*", methods = "*") {
     plumber::forward()
   } else {
     res$setHeader("Access-Control-Allow-Methods", methods)
-    res$setHeader("Access-Control-Allow-Headers",
-                  req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS)
+    res$setHeader(
+      "Access-Control-Allow-Headers",
+      req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS
+    )
     res$status <- 200
     return(list())
   }
@@ -96,22 +106,26 @@ api_stop <- function(status, ...) {
 #' @export
 api_stopifnot <- function(expr, status, ...) {
   message <- paste0(...)
-  if (length(message) == 0 || !nzchar(message))
+  if (length(message) == 0 || !nzchar(message)) {
     message <- paste(deparse(substitute(expr)), "is not TRUE")
+  }
   if (!expr) api_stop(status, message)
 }
 #' @rdname api_helpers
 #' @export
 get_host <- function(api, req) {
   host <- api_attr(api, "api_base_url")
-  if (!is.null(host))
+  if (!is.null(host)) {
     return(host)
-  if ("HTTP_HOST" %in% names(req))
+  }
+  if ("HTTP_HOST" %in% names(req)) {
     return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST))
+  }
   host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME)
   if (!is.null(req$SERVER_PORT) && nzchar(req$SERVER_PORT) &&
-      req$SERVER_PORT != "80")
+    req$SERVER_PORT != "80") {
     host <- paste0(host, ":", req$SERVER_PORT)
+  }
   host
 }
 #' @rdname api_helpers
@@ -128,8 +142,9 @@ get_method <- function(req) {
 #' @export
 api_add_conforms_to <- function(api, conforms_to) {
   current <- api_attr(api, "conforms_to")
-  if (!is.null(current))
+  if (!is.null(current)) {
     conforms_to <- unique(c(current, conforms_to))
+  }
   api_attr(api, "conforms_to") <- conforms_to
 }
 #' @keywords internal
@@ -219,7 +234,8 @@ local_req <- function(path = "/", body = list()) {
 }
 #' @keywords internal
 get_req <- function(x) {
-  if (!missing(x))
+  if (!missing(x)) {
     return(x)
+  }
   local_req()
 }

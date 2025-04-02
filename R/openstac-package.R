@@ -15,3 +15,9 @@
 #' @aliases openstac
 ## usethis namespace: end
 NULL
+
+#' @importFrom sf st_sfc
+#' @importFrom sf st_polygon
+#' @importFrom sf st_intersects
+#' @importFrom jsonlite fromJSON
+#' @importFrom jsonlite toJSON

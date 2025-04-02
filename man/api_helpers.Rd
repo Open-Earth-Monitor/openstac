@@ -55,6 +55,14 @@ works if the \code{api_error_handler} function is handling errors in
 
 \item{expr}{The expression to evaluate. If the expression evaluates
 to FALSE, an error will be raised.}
+
+\item{api}{The API object to be associated with the \code{plumber} router.
+This object is used to store additional information about the API
+To create an API object, use the \code{create_api} function.}
+
+\item{conforms_to}{A list with the conformance standards adhered to
+by the API. This parameter can be NULL or contain additional
+conformance standards to add to the defaults.}
 }
 \description{
 This set of functions provides HTTP CORS (Cross-Origin Resource Sharing)

@@ -47,7 +47,7 @@ new_db <- function(driver, ...) {
   UseMethod("new_db", driver)
 }
 #' @keywords internal
-db_collections_id <- function(db) {
+db_collections_id <- function(db, ids = NULL) {
   UseMethod("db_collections_id", db)
 }
 #' @keywords internal

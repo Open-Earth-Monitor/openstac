@@ -72,15 +72,10 @@
 #' @param handle_errors A logical value indicating whether to handle
 #'   errors using the `openstac` default error handler. Default is `TRUE`.
 #'
+#' @param api_base_url A character string specifying the base URL of the API.
+#'
 #' @param api An object representing the API. This object is typically
 #'   created using either the `create_stac` or `create_ogcapi`
-#'
-#' @param req The request object from the `plumber` package, containing
-#'   information about the HTTP request made to the API endpoint.
-#'
-#' @param res The response object from the `plumber` package, used to
-#'   construct and send the HTTP response back to the client making
-#'   the request.
 #'
 #' @param collection_id The identifier of the collection. This parameter
 #'   specifies which collection the request is targeting.
@@ -214,13 +209,15 @@ setup_plumber <- function(api,
                           docs_endpoint = "/docs") {
   stopifnot(is_absolute_url(api_base_url))
   api_attr(api, "plumber") <- pr
-  if (handle_errors)
+  if (handle_errors) {
     plumber::pr_set_error(pr, api_error_handler)
+  }
   api_attr(api, "api_base_url") <- api_base_url
   if (!is.null(spec_endpoint)) {
     setup_plumber_spec(api, pr, spec_endpoint)
-    if (!is.null(docs_endpoint))
+    if (!is.null(docs_endpoint)) {
       setup_plumber_docs(api, pr, docs_endpoint, spec_endpoint)
+    }
   }
 }
 #' @rdname api_handling
