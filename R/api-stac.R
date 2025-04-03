@@ -1,62 +1,67 @@
 #' @rdname api_handling
 #' @export
-api_landing_page.stac <- function(api, ...) {
+api_landing_page.stac <- function(api, req, res, ...) {
   doc <- NextMethod("api_landing_page", api)
-  req <- get_req(...)
   host <- get_host(api, req)
   doc <- c(list(
     type = "Catalog"
   ), doc)
-  if (api$has("stac_version"))
+  if (api$has("stac_version")) {
     doc <- c(list(
       stac_version = api$get("stac_version")
     ), doc)
-  if (api$has("id"))
+  }
+  if (api$has("id")) {
     doc <- c(list(
       id = api$get("id")
     ), doc)
-  if (api$has("conforms_to"))
+  }
+  if (api$has("conforms_to")) {
     doc <- c(list(
       conformsTo = api$conforms_to()
     ), doc)
-  doc <- doc |>
-    add_link(
-      rel = "search",
-      href = make_url(host, "/search"),
-      type = "application/geo+json",
-      title = "STAC search",
-      method = "GET"
-    ) |>
-    add_link(
-      rel = "search",
-      href = make_url(host, "/search"),
-      type = "application/geo+json",
-      title = "STAC search",
-      method = "POST"
-    )
+  }
+  doc <- update_link(
+    doc = doc,
+    rel = "search",
+    href = make_url(host, "/search"),
+    type = "application/geo+json",
+    title = "STAC search",
+    method = "GET"
+  )
+  doc <- update_link(
+    doc = doc,
+    rel = "search",
+    href = make_url(host, "/search"),
+    type = "application/geo+json",
+    title = "STAC search",
+    method = "POST"
+  )
   doc
 }
 #' @rdname api_handling
 #' @export
-api_conformance.stac <- function(api, ...) {
+api_conformance.stac <- function(api, req, res, ...) {
   doc <- NextMethod("api_conformance", api)
   doc
 }
 #' @rdname api_handling
 #' @export
-api_collections.stac <- function(api, ...) {
+api_collections.stac <- function(api, req, res, ...) {
   doc <- NextMethod("api_collections", api)
   doc
 }
 #' @rdname api_handling
 #' @export
-api_collection.stac <- function(api, collection_id, ...) {
+api_collection.stac <- function(api, req, res, collection_id, ...) {
   doc <- NextMethod("api_collection", api)
   doc
 }
 #' @rdname api_handling
 #' @export
 api_items.stac <- function(api,
+                           req,
+                           res,
                            collection_id,
                            limit,
                            bbox,
@@ -67,13 +72,15 @@ api_items.stac <- function(api,
 }
 #' @rdname api_handling
 #' @export
-api_item.stac <- function(api, collection_id, item_id, ...) {
+api_item.stac <- function(api, req, res, collection_id, item_id, ...) {
   doc <- NextMethod("api_item", api)
   doc
 }
 #' @rdname api_handling
 #' @export
 api_search.stac <- function(api,
+                            req,
+                            res,
                             limit,
                             bbox,
                             datetime,
@@ -81,7 +88,6 @@ api_search.stac <- function(api,
                             ids,
                             collections,
                             page, ...) {
-  req <- get_req(...)
   host <- get_host(api, req)
   method <- get_method(req)
   # check parameters
@@ -141,20 +147,19 @@ api_search.stac <- function(api,
     collections = collections,
     page = page
   )
-  doc <- doc |>
-    map_features(\(item) {
-      item <- item |>
-        link_root(api, req) |>
-        link_self(api, req, "application/geo+json") |>
-        update_link(
-          rel = "collection",
-          href = make_url(host, "/collections", item$collection),
-          type = "application/json"
-        )
-      item
-    }) |>
-    link_root(api, req) |>
-    link_self(api, req, "application/geo+json")
+  doc <- map_features(doc, \(item) {
+    item <- link_root(item, api, req)
+    item <- link_self(item, api, req, "application/geo+json")
+    item <- update_link(
+      doc = item,
+      rel = "collection",
+      href = make_url(host, "/collections", item$collection),
+      type = "application/json"
+    )
+    item
+  })
+  doc <- link_root(doc, api, req)
+  doc <- link_self(doc, api, req, "application/geo+json")
   # add navigation links
   if (method == "GET") {
     doc <- links_navigation(

@@ -41,13 +41,13 @@ api <- set_db(api, driver = "local", file = "/openstac/openlandmap.rds")
 #* Register plumber router in api object
 #* @plumber
 function(pr) {
-  set_plumber(api, pr, handle_errors = TRUE)
+  openstac::set_plumber(api, pr, handle_errors = TRUE)
 }
 
 #* Enable Cross-origin Resource Sharing
 #* @filter cors
 function(req, res) {
-  api_cors_handler(req, res, origin = "*", methods = "*")
+  openstac::api_cors_handler(req, res, origin = "*", methods = "*")
 }
 
 #* OpenAPI spec
@@ -55,7 +55,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_spec(api, req)
+  openstac::api_spec(api, req, res)
 }
 
 #* Landing page
@@ -63,7 +63,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_landing_page(api, req, res)
+  openstac::api_landing_page(api, req, res)
 }
 
 #* Conformance endpoint
@@ -71,7 +71,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_conformance(api, req, res)
+  openstac::api_conformance(api, req, res)
 }
 
 #* Collections endpoint
@@ -79,7 +79,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_collections(api, req, res)
+  openstac::api_collections(api, req, res)
 }
 
 #* Collection endpoint
@@ -88,7 +88,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res, collection_id) {
-  api_collection(api, req, res, collection_id)
+  openstac::api_collection(api, req, res, collection_id)
 }
 
 #* Items endpoint
@@ -147,7 +147,7 @@ function(req,
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res, collection_id, item_id) {
-  api_item(api, req, res, collection_id, item_id)
+  openstac::api_item(api, req, res, collection_id, item_id)
 }
 
 #* Search endpoint

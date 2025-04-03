@@ -115,17 +115,22 @@ api_stopifnot <- function(expr, status, ...) {
 #' @export
 get_host <- function(api, req) {
   host <- api_attr(api, "api_base_url")
-  if (!is.null(host)) {
+  if (is.null(host)) {
+    host <- ""
+  }
+  if (is_absolute_url(host)) {
     return(host)
   }
   if ("HTTP_HOST" %in% names(req)) {
-    return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST))
+    return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST, host))
   }
-  host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME)
   if (!is.null(req$SERVER_PORT) && nzchar(req$SERVER_PORT) &&
     req$SERVER_PORT != "80") {
-    host <- paste0(host, ":", req$SERVER_PORT)
+    host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME, host)
+    host <- paste0(host, ":", req$SERVER_PORT, host)
+    return(host)
   }
+  host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME, host)
   host
 }
 #' @rdname api_helpers
@@ -186,20 +191,42 @@ setup_plumber_spec <- function(api, pr, spec_endpoint) {
 }
 #' @keywords internal
 setup_plumber_docs <- function(api, pr, docs_endpoint, spec_endpoint) {
+  # remove leading slash
+  spec_endpoint <- gsub("^/", "", spec_endpoint)
+
   docs_handler <- function(req, res, ...) {
-    swagger::swagger_spec(
+    html_lines <- swagger::swagger_spec(
       api_path = paste0(
         '"',
         make_url(get_host(api, req), spec_endpoint, ...),
         '"'
       )
     )
+    html_lines <- strsplit(html_lines, "\n")[[1]]
+    # Inject <base href="/docs/"> into the <head> section
+    head_index <- grep("<head.*?>", html_lines, ignore.case = TRUE)
+    if (length(head_index) > 0) {
+      html_lines <- append(
+        html_lines,
+        values = '  <base href="/docs/">',
+        after = head_index[1]
+      )
+    }
+    paste(html_lines, collapse = "\n")
   }
+
   api_attr(api, "docs_endpoint") <- docs_endpoint
   plumber::pr_static(
     pr = pr,
-    path = docs_endpoint,
+    path = paste0(docs_endpoint, "/"),
     direc = swagger::swagger_path()
+  )
+  plumber::pr_get(
+    pr = pr,
+    path = docs_endpoint,
+    handler = docs_handler,
+    serializer = plumber::serializer_html(),
+    tag = "API"
   )
   plumber::pr_get(
     pr = pr,
@@ -208,13 +235,25 @@ setup_plumber_docs <- function(api, pr, docs_endpoint, spec_endpoint) {
     serializer = plumber::serializer_html(),
     tag = "API"
   )
-  plumber::pr_get(
-    pr = pr,
-    path = paste0(docs_endpoint, "/"),
-    handler = docs_handler,
-    serializer = plumber::serializer_html(),
-    tag = "API"
-  )
+  # plumber::pr_static(
+  #   pr = pr,
+  #   path = docs_endpoint,
+  #   direc = swagger::swagger_path()
+  # )
+  # plumber::pr_get(
+  #   pr = pr,
+  #   path = paste0(docs_endpoint, "/index.html"),
+  #   handler = docs_handler,
+  #   serializer = plumber::serializer_html(),
+  #   tag = "API"
+  # )
+  # plumber::pr_get(
+  #   pr = pr,
+  #   path = paste0(docs_endpoint, "/"),
+  #   handler = docs_handler,
+  #   serializer = plumber::serializer_html(),
+  #   tag = "API"
+  # )
 }
 #' @keywords internal
 local_req <- function(path = "/", body = list()) {
@@ -233,9 +272,12 @@ local_req <- function(path = "/", body = list()) {
   req
 }
 #' @keywords internal
-get_req <- function(x) {
-  if (!missing(x)) {
-    return(x)
-  }
-  local_req()
+map_collections <- function(doc, fn, ...) {
+  doc$collections <- lapply(doc$collections, fn, ...)
+  doc
+}
+#' @keywords internal
+map_features <- function(doc, fn, ...) {
+  doc$features <- lapply(doc$features, fn, ...)
+  doc
 }

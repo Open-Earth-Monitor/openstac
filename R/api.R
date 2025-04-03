@@ -73,9 +73,19 @@
 #'   errors using the `openstac` default error handler. Default is `TRUE`.
 #'
 #' @param api_base_url A character string specifying the base URL of the API.
+#'   Can be either a full URL or a relative path starting with `/`.
+#'   Example: `http://localhost:8000` or `/v1`.
 #'
 #' @param api An object representing the API. This object is typically
 #'   created using either the `create_stac` or `create_ogcapi`
+#'
+#' @param req The HTTP request object. It contains information about
+#'  the incoming request, such as headers, query parameters, and
+#'  body data.
+#'
+#' @param res The HTTP response object. It is used to send the
+#'  response back to the client. It allows you to set the response
+#'  status, headers, and body.
 #'
 #' @param collection_id The identifier of the collection. This parameter
 #'   specifies which collection the request is targeting.
@@ -207,7 +217,7 @@ setup_plumber <- function(api,
                           api_base_url = NULL,
                           spec_endpoint = "/api",
                           docs_endpoint = "/docs") {
-  stopifnot(is_absolute_url(api_base_url))
+  stopifnot(grepl("^/", api_base_url) || is_absolute_url(api_base_url))
   api_attr(api, "plumber") <- pr
   if (handle_errors) {
     plumber::pr_set_error(pr, api_error_handler)
@@ -222,27 +232,29 @@ setup_plumber <- function(api,
 }
 #' @rdname api_handling
 #' @export
-api_landing_page <- function(api, ...) {
+api_landing_page <- function(api, req, res, ...) {
   UseMethod("api_landing_page", api)
 }
 #' @rdname api_handling
 #' @export
-api_conformance <- function(api, ...) {
+api_conformance <- function(api, req, res, ...) {
   UseMethod("api_conformance", api)
 }
 #' @rdname api_handling
 #' @export
-api_collections <- function(api, ...) {
+api_collections <- function(api, req, res, ...) {
   UseMethod("api_collections", api)
 }
 #' @rdname api_handling
 #' @export
-api_collection <- function(api, collection_id, ...) {
+api_collection <- function(api, req, res, collection_id, ...) {
   UseMethod("api_collection", api)
 }
 #' @rdname api_handling
 #' @export
 api_items <- function(api,
+                      req,
+                      res,
                       collection_id,
                       limit,
                       bbox,
@@ -252,12 +264,14 @@ api_items <- function(api,
 }
 #' @rdname api_handling
 #' @export
-api_item <- function(api, collection_id, item_id, ...) {
+api_item <- function(api, req, res, collection_id, item_id, ...) {
   UseMethod("api_item", api)
 }
 #' @rdname api_handling
 #' @export
 api_search <- function(api,
+                       req,
+                       res,
                        limit,
                        bbox,
                        datetime,
@@ -266,14 +280,4 @@ api_search <- function(api,
                        collections,
                        page, ...) {
   UseMethod("api_search", api)
-}
-#' @keywords internal
-map_collections <- function(doc, fn, ...) {
-  doc$collections <- lapply(doc$collections, fn, ...)
-  doc
-}
-#' @keywords internal
-map_features <- function(doc, fn, ...) {
-  doc$features <- lapply(doc$features, fn, ...)
-  doc
 }

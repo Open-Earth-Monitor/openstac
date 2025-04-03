@@ -51,7 +51,9 @@ make_url <- function(host, ..., ignore_query = FALSE) {
     params <- dots[names(dots) != ""]
   }
   path <- paste0(segments, collapse = "/")
-  url <- paste0(host, path)
+  path <- sub("^/", "", path)
+  host <- sub("/$", "", host)
+  url <- paste0(host, "/", path)
   query <- paste(names(params), unname(params), sep = "=", collapse = "&")
   if (!ignore_query && query != "") url <- paste0(url, "?", query)
   url
@@ -60,8 +62,9 @@ make_url <- function(host, ..., ignore_query = FALSE) {
 make_body <- function(...) {
   dots <- c(...)
   body <- list()
-  if (!is.null(names(dots)))
+  if (!is.null(names(dots))) {
     body <- as.list(dots[names(dots) != ""])
+  }
   body
 }
 #' @keywords internal
@@ -144,7 +147,9 @@ links_navigagion_post <- function(doc,
 #' @keywords internal
 link_spec <- function(doc, api, req) {
   spec_endpoint <- api_attr(api, "spec_endpoint")
-  if (is.null(spec_endpoint)) return(doc)
+  if (is.null(spec_endpoint)) {
+    return(doc)
+  }
   url <- make_url(get_host(api, req), spec_endpoint)
   doc <- update_link(
     doc = doc,
@@ -158,7 +163,9 @@ link_spec <- function(doc, api, req) {
 #' @keywords internal
 link_docs <- function(doc, api, req) {
   docs_endpoint <- api_attr(api, "docs_endpoint")
-  if (is.null(docs_endpoint)) return(doc)
+  if (is.null(docs_endpoint)) {
+    return(doc)
+  }
   url <- make_url(get_host(api, req), docs_endpoint)
   doc <- update_link(
     doc = doc,
@@ -169,4 +176,3 @@ link_docs <- function(doc, api, req) {
   )
   doc
 }
-

@@ -28,31 +28,43 @@
 \alias{api_search}
 \title{Handle API requests}
 \usage{
-\method{api_landing_page}{oafeat}(api, ...)
+\method{api_landing_page}{oafeat}(api, req, res, ...)
 
-\method{api_conformance}{oafeat}(api, ...)
+\method{api_conformance}{oafeat}(api, req, res, ...)
 
-\method{api_collections}{oafeat}(api, ...)
+\method{api_collections}{oafeat}(api, req, res, ...)
 
-\method{api_collection}{oafeat}(api, collection_id, ...)
+\method{api_collection}{oafeat}(api, req, res, collection_id, ...)
 
-\method{api_items}{oafeat}(api, collection_id, limit, bbox, datetime, page, ...)
+\method{api_items}{oafeat}(api, req, res, collection_id, limit, bbox, datetime, page, ...)
 
-\method{api_item}{oafeat}(api, collection_id, item_id, ...)
+\method{api_item}{oafeat}(api, req, res, collection_id, item_id, ...)
 
-\method{api_landing_page}{stac}(api, ...)
+\method{api_landing_page}{stac}(api, req, res, ...)
 
-\method{api_conformance}{stac}(api, ...)
+\method{api_conformance}{stac}(api, req, res, ...)
 
-\method{api_collections}{stac}(api, ...)
+\method{api_collections}{stac}(api, req, res, ...)
 
-\method{api_collection}{stac}(api, collection_id, ...)
+\method{api_collection}{stac}(api, req, res, collection_id, ...)
 
-\method{api_items}{stac}(api, collection_id, limit, bbox, datetime, page, ...)
+\method{api_items}{stac}(api, req, res, collection_id, limit, bbox, datetime, page, ...)
 
-\method{api_item}{stac}(api, collection_id, item_id, ...)
+\method{api_item}{stac}(api, req, res, collection_id, item_id, ...)
 
-\method{api_search}{stac}(api, limit, bbox, datetime, intersects, ids, collections, page, ...)
+\method{api_search}{stac}(
+  api,
+  req,
+  res,
+  limit,
+  bbox,
+  datetime,
+  intersects,
+  ids,
+  collections,
+  page,
+  ...
+)
 
 create_api(api_class, title, description, conforms_to, ...)
 
@@ -70,23 +82,43 @@ setup_plumber(
   docs_endpoint = "/docs"
 )
 
-api_landing_page(api, ...)
+api_landing_page(api, req, res, ...)
 
-api_conformance(api, ...)
+api_conformance(api, req, res, ...)
 
-api_collections(api, ...)
+api_collections(api, req, res, ...)
 
-api_collection(api, collection_id, ...)
+api_collection(api, req, res, collection_id, ...)
 
-api_items(api, collection_id, limit, bbox, datetime, page, ...)
+api_items(api, req, res, collection_id, limit, bbox, datetime, page, ...)
 
-api_item(api, collection_id, item_id, ...)
+api_item(api, req, res, collection_id, item_id, ...)
 
-api_search(api, limit, bbox, datetime, intersects, ids, collections, page, ...)
+api_search(
+  api,
+  req,
+  res,
+  limit,
+  bbox,
+  datetime,
+  intersects,
+  ids,
+  collections,
+  page,
+  ...
+)
 }
 \arguments{
 \item{api}{An object representing the API. This object is typically
 created using either the \code{create_stac} or \code{create_ogcapi}}
+
+\item{req}{The HTTP request object. It contains information about
+the incoming request, such as headers, query parameters, and
+body data.}
+
+\item{res}{The HTTP response object. It is used to send the
+response back to the client. It allows you to set the response
+status, headers, and body.}
 
 \item{...}{Additional arguments to be passed to the method-specific
 functions.}
