@@ -217,7 +217,9 @@ setup_plumber <- function(api,
                           api_base_url = NULL,
                           spec_endpoint = "/api",
                           docs_endpoint = "/docs") {
-  stopifnot(grepl("^/", api_base_url) || is_absolute_url(api_base_url))
+  if (!is.null(api_base_url)) {
+    stopifnot(grepl("^/", api_base_url) || is_absolute_url(api_base_url))
+  }
   api_attr(api, "plumber") <- pr
   if (handle_errors) {
     plumber::pr_set_error(pr, api_error_handler)

@@ -22,6 +22,7 @@ api_landing_page.oafeat <- function(api, req, res, ...) {
   db <- get_db(api)
   doc$links <- c(doc$links, lapply(db_collections(db), \(col) {
     update_link(
+      doc = col,
       rel = "child",
       href = make_url(host, "/collections", escape_url(col$id)),
       type = "application/json",
