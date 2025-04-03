@@ -30,3 +30,21 @@ create_collections <- function(collections, ...) {
 possibly <- function(expr) {
   tryCatch(expr, error = function(e) NULL)
 }
+as_datetime <- function(datetime) {
+  format(
+    x = as.POSIXct(
+      x = datetime,
+      tz = "GMT",
+      tryFormats = c("%Y-%m-%dT%H:%M:%OSZ",
+                     "%Y-%m-%d %H:%M:%OSZ",
+                     "%Y-%m-%dT%H:%M:%OSz",
+                     "%Y-%m-%d %H:%M:%OSz",
+                     "%Y-%m-%dT%H:%M:%OS",
+                     "%Y-%m-%d %H:%M:%OS",
+                     "%Y-%m-%dT%H:%M",
+                     "%Y-%m-%d %H:%M",
+                     "%Y-%m-%d")),
+    format = "%Y-%m-%dT%H:%M:%OSZ",
+    usetz = FALSE
+  )
+}

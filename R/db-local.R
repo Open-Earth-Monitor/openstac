@@ -1,7 +1,6 @@
 #' @export
 new_db.local <- function(driver, file, ...) {
   # driver checkers
-  stopifnot(requireNamespace("rstac", quietly = TRUE))
   stopifnot(file.exists(file))
   data <- readRDS(file)
   stopifnot(is.list(data))
@@ -13,52 +12,46 @@ new_db.local <- function(driver, file, ...) {
   }
   structure(data, class = driver[[1]])
 }
-
+#' @export
+db_collections_id.local <- function(db, ids = NULL) {
+  local_collections_id(db, ids)
+}
 #' @export
 db_collections_id_exist.local <- function(db, ids) {
-  ids %in% names(db$collections)
+  ids %in% local_collections_id(db)
 }
-
 #' @export
 db_collections.local <- function(db) {
-  unname(db$collections)
+  # TODO: implement pagination limit
+  local_collections(db)
 }
-
 #' @export
 db_collection.local <- function(db, collection_id) {
-  local_collection(db, collection_id)
+  local_collections(db, collection_id[[1]])[[1]]
 }
-
 #' @export
 db_items_id_exist.local <- function(db, collection_id, ids) {
-  items <- local_items(db, collection_id)
-  ids %in% local_items_id(items)
+  ids %in% local_items_id(db$items[[collection_id]])
 }
-
 #' @export
 db_items.local <- function(db, collection_id, limit, bbox, datetime, page) {
   items <- local_items(db, collection_id)
-  # datetime filter...
-  if (!is.null(datetime))
-    items <- local_filter_datetime(items, datetime)
-  # spatial filter
+  # spatial filter...
   if (!is.null(bbox)) {
-    items <- local_filter_spatial(items, bbox_as_sfc(bbox))
+    items <- local_filter_spatial(items, bbox_as_sfg(bbox))
   }
-  items$numberMatched <- length(items$features)
+  # datetime filter...
+  if (!is.null(datetime)) {
+    items <- local_filter_datetime(items, datetime)
+  }
   # manage pagination
   local_paginate_items(items, limit, page)
 }
-
 #' @export
 db_item.local <- function(db, collection_id, item_id) {
-  items <- local_items(db, collection_id)
-  items <- local_filter_ids(items, item_id)
-  item <- items$features[[1]]
-  item$collection <- collection_id
-  as_item(item)
+  items <- local_items(db, collection_id, item_id[[1]])
+  items$features[[1]]
 }
-
 #' @export
 db_search.local <- function(db,
                             limit,
@@ -72,62 +65,76 @@ db_search.local <- function(db,
   for (collection_id in collections) {
     items <- local_items(db, collection_id)
     # id filter
-    if (!is.null(ids))
-      items <- local_filter_ids(items, ids)
-    # datetime filter...
-    if (!is.null(datetime))
-      items <- local_filter_datetime(items, datetime)
+    if (!is.null(ids)) {
+      items <- local_filter_id(items, ids)
+    }
     # spatial filter...
     # ...bbox
     if (!is.null(bbox)) {
-      items <- local_filter_spatial(items, bbox_as_sfc(bbox))
+      items <- local_filter_spatial(items, bbox_as_sfg(bbox))
     } else if (!is.null(intersects)) {
       # ...intersects
       items <- local_filter_spatial(items, geom_as_sfg(intersects))
     }
-    # make sure to have the collection_id for each item
-    items$features <- lapply(items$features, function(item) {
-      item$collection <- collection_id
-      class(item) <- c("doc_item", "list")
-      item
-    })
+    # datetime filter...
+    if (!is.null(datetime)) {
+      items <- local_filter_datetime(items, datetime)
+    }
     features <- c(features, items$features)
   }
-  items <- local_new_items(features)
-  items$numberMatched <- length(items$features)
+  items <- create_items(features)
   # manage pagination
   local_paginate_items(items, limit, page)
 }
 
-local_new_items <- function(features) {
-  structure(list(
-    type = "FeatureCollection",
-    features = features
-  ), class = c("doc_items", "list"))
+#---- internal functions ----
+#' @keywords internal
+local_collections_id <- function(db, ids = NULL) {
+  col_id <- names(db$collections)
+  if (!is.null(ids)) {
+    col_id <- col_id[col_id %in% ids]
+  }
+  col_id
 }
-
-local_collection <- function(db, collection_id) {
-  doc <- db$collections[[collection_id]]
-  class(doc) <- c("doc_collection", "list")
-  doc
+#' @keywords internal
+local_collections <- function(db, collection_id = NULL) {
+  collections <- db$collections
+  if (!is.null(collection_id)) {
+    collection_id <- local_collections_id(db, collection_id)
+    collections <- db$collections[collection_id]
+  }
+  unname(collections)
 }
-
-local_items <- function(db, collection_id) {
-  doc <- db$items[[collection_id]]
-  class(doc) <- c("doc_items", "list")
-  doc
-}
-
+#' @keywords internal
 local_items_id <- function(items) {
-  rstac::items_reap(items, "id")
+  vapply(items$features, \(item) item$id, character(1))
 }
-
-local_filter_ids <- function(items, ids) {
-  select <- which(local_items_id(items) %in% ids)
+#' @keywords internal
+local_items_datetime <- function(items) {
+  vapply(items$features, \(item) item$properties$datetime, character(1))
+}
+#' @keywords internal
+local_filter_spatial <- function(items, geom) {
+  if (length(items$features) == 0) {
+    return(items)
+  }
+  items_geom <- sf::st_sfc(
+    lapply(items$features, \(item) {
+      api_stopifnot(!is.null(item$geometry), 500)
+      api_stopifnot(item$geometry$type == "Polygon", 500)
+      sf::st_polygon(
+        lapply(item$geometry$coordinates, \(ring) {
+          matrix(unlist(ring), ncol = 2, byrow = TRUE)
+        })
+      )
+    }),
+    check_ring_dir = TRUE
+  )
+  select <- apply(sf::st_intersects(items_geom, geom), 1, any) > 0
   items$features <- items$features[select]
   items
 }
-
+#' @keywords internal
 local_filter_datetime <- function(items, datetime) {
   exact_date <- datetime$exact
   start_date <- datetime$start
@@ -137,49 +144,46 @@ local_filter_datetime <- function(items, datetime) {
     items <- local_filter_exact_date(items, exact_date)
   } else {
     # ...start_date
-    if (!is.null(start_date))
+    if (!is.null(start_date)) {
       items <- local_filter_start_date(items, start_date)
+    }
     # ...end_date
-    if (!is.null(end_date))
+    if (!is.null(end_date)) {
       items <- local_filter_end_date(items, end_date)
+    }
   }
   items
 }
-
+#' @keywords internal
 local_filter_exact_date <- function(items, exact_date) {
-  if (length(items$features) == 0) return(items)
+  if (length(items$features) == 0) {
+    return(items)
+  }
   select <- local_items_datetime(items) == as.Date(exact_date)
   items$features <- items$features[select]
   items
 }
-
+#' @keywords internal
 local_filter_start_date <- function(items, start_date) {
-  if (length(items$features) == 0) return(items)
+  if (length(items$features) == 0) {
+    return(items)
+  }
   select <- local_items_datetime(items) >= as.Date(start_date)
   items$features <- items$features[select]
   items
 }
-
+#' @keywords internal
 local_filter_end_date <- function(items, end_date) {
-  if (length(items$features) == 0) return(items)
-  select <- local_items_datetime(items) <= as.Date(end_date)
+  if (length(items$features) == 0) {
+    return(items)
+  }
+  select <- local_items_datetime(items) < as.Date(end_date)
   items$features <- items$features[select]
   items
 }
-local_filter_datetime <- function(items, datetime) {
-  if (length(items$features) == 0) return(items)
-  select <- rstac::items_intersects(items, geom)
-  items$features <- items$features[select]
-  items
-}
-local_filter_spatial <- function(items, geom) {
-  if (length(items$features) == 0) return(items)
-  select <- rstac::items_intersects(items, geom)
-  items$features <- items$features[select]
-  items
-}
-
+#' @keywords internal
 local_paginate_items <- function(items, limit, page) {
+  items$numberMatched <- length(items$features)
   if (is.null(limit)) limit <- 10
   if (is.null(page)) page <- 1
   pages <- get_pages(items, limit)
@@ -200,5 +204,24 @@ local_paginate_items <- function(items, limit, page) {
     items$features <- items$features[select]
   }
   items$numberReturned <- length(items$features)
+  items
+}
+#' @keywords internal
+local_items <- function(db, collection_id, items_id = NULL) {
+  collection_id <- collection_id[[1]]
+  items <- db$items[[collection_id]]
+  items <- map_features(items, \(item) {
+    item$collection <- collection_id
+    item
+  })
+  local_filter_id(items, items_id)
+}
+#' @keywords internal
+local_filter_id <- function(items, items_id = NULL) {
+  if (is.null(items_id)) {
+    return(items)
+  }
+  ids <- local_items_id(items)
+  items$features <- items$features[ids %in% items_id]
   items
 }

@@ -37,7 +37,8 @@ api <- create_stac(
 
 # Set API database
 api <- set_db(
-  api, driver = "mongodb",
+  api,
+  driver = "mongodb",
   db = "openlandmap",
   url = "mongodb://0.0.0.0:27017" # the same as the container port
 )
@@ -45,13 +46,13 @@ api <- set_db(
 #* Custom error handling
 #* @plumber
 function(pr) {
-  pr_set_error(pr, api_error_handler)
+  openstac::pr_set_error(pr, api_error_handler)
 }
 
 #* Enable Cross-origin Resource Sharing
 #* @filter cors
 function(req, res) {
-  api_cors_handler(req, res, origin = "*", methods = "*")
+  openstac::api_cors_handler(req, res, origin = "*", methods = "*")
 }
 
 #* Landing page
@@ -59,7 +60,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_landing_page(api, req, res)
+  openstac::api_landing_page(api, req, res)
 }
 
 #* Conformance endpoint
@@ -67,7 +68,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_conformance(api, req, res)
+  openstac::api_conformance(api, req, res)
 }
 
 #* Collections endpoint
@@ -75,7 +76,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res) {
-  api_collections(api, req, res)
+  openstac::api_collections(api, req, res)
 }
 
 #* Collection endpoint
@@ -84,7 +85,7 @@ function(req, res) {
 #* @serializer unboxedJSON
 #* @tag 'STAC API v1.0.0'
 function(req, res, collection_id) {
-  api_collection(api, req, res, collection_id)
+  openstac::api_collection(api, req, res, collection_id)
 }
 
 #* Items endpoint
@@ -173,7 +174,7 @@ function(req,
   }
   if (missing(bbox)) bbox <- NULL
   if (missing(intersects)) intersects <- NULL
-  print('this one')
+  print("this one")
   api_stopifnot(
     is.null(bbox) || is.null(intersects),
     status = 400,
@@ -214,18 +215,18 @@ function(req,
   }
   # call api search asynchronously
   # promises::future_promise({
-    api_search(
-      api = api,
-      req = req,
-      res = res,
-      limit = limit,
-      bbox = bbox,
-      datetime = datetime,
-      intersects = intersects,
-      ids = ids,
-      collections = collections,
-      page = page
-    )
+  api_search(
+    api = api,
+    req = req,
+    res = res,
+    limit = limit,
+    bbox = bbox,
+    datetime = datetime,
+    intersects = intersects,
+    ids = ids,
+    collections = collections,
+    page = page
+  )
   # })
 }
 
@@ -251,7 +252,7 @@ function(req, res) {
   }
   if (missing(bbox)) bbox <- NULL
   if (missing(intersects)) intersects <- NULL
-  print('this two')
+  print("this two")
   api_stopifnot(
     is.null(bbox) || is.null(intersects),
     status = 400,
@@ -287,17 +288,17 @@ function(req, res) {
   }
   # call api search asynchronously
   # promises::future_promise({
-    api_search(
-      api = api,
-      req = req,
-      res = res,
-      limit = limit,
-      bbox = bbox,
-      datetime = datetime,
-      intersects = intersects,
-      ids = ids,
-      collections = collections,
-      page = page
-    )
+  api_search(
+    api = api,
+    req = req,
+    res = res,
+    limit = limit,
+    bbox = bbox,
+    datetime = datetime,
+    intersects = intersects,
+    ids = ids,
+    collections = collections,
+    page = page
+  )
   # })
 }

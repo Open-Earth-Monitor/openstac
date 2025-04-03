@@ -50,6 +50,14 @@
 #'   works if the `api_error_handler` function is handling errors in
 #'   `plumber`.
 #'
+#' @param api The API object to be associated with the `plumber` router.
+#'   This object is used to store additional information about the API
+#'   To create an API object, use the `create_api` function.
+#'
+#' @param conforms_to A list with the conformance standards adhered to
+#'   by the API. This parameter can be NULL or contain additional
+#'   conformance standards to add to the defaults.
+#'
 #' @param expr The expression to evaluate. If the expression evaluates
 #'   to FALSE, an error will be raised.
 #'
@@ -73,8 +81,10 @@ api_cors_handler <- function(req, res, origin = "*", methods = "*") {
     plumber::forward()
   } else {
     res$setHeader("Access-Control-Allow-Methods", methods)
-    res$setHeader("Access-Control-Allow-Headers",
-                  req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS)
+    res$setHeader(
+      "Access-Control-Allow-Headers",
+      req$HTTP_ACCESS_CONTROL_REQUEST_HEADERS
+    )
     res$status <- 200
     return(list())
   }
@@ -96,22 +106,31 @@ api_stop <- function(status, ...) {
 #' @export
 api_stopifnot <- function(expr, status, ...) {
   message <- paste0(...)
-  if (!nzchar(message))
+  if (length(message) == 0 || !nzchar(message)) {
     message <- paste(deparse(substitute(expr)), "is not TRUE")
+  }
   if (!expr) api_stop(status, message)
 }
 #' @rdname api_helpers
 #' @export
 get_host <- function(api, req) {
   host <- api_attr(api, "api_base_url")
-  if (!is.null(host))
+  if (is.null(host)) {
+    host <- ""
+  }
+  if (is_absolute_url(host)) {
     return(host)
-  if ("HTTP_HOST" %in% names(req))
-    return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST))
-  host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME)
+  }
+  if ("HTTP_HOST" %in% names(req)) {
+    return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST, host))
+  }
   if (!is.null(req$SERVER_PORT) && nzchar(req$SERVER_PORT) &&
-      req$SERVER_PORT != "80")
-    host <- paste0(host, ":", req$SERVER_PORT)
+    req$SERVER_PORT != "80") {
+    host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME, host)
+    host <- paste0(host, ":", req$SERVER_PORT, host)
+    return(host)
+  }
+  host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME, host)
   host
 }
 #' @rdname api_helpers
@@ -124,18 +143,22 @@ get_path <- function(req) {
 get_method <- function(req) {
   req$REQUEST_METHOD
 }
-#' @keywords internal
-api_env <- function(api) {
-  attr(api, "env")
+#' @rdname api_helpers
+#' @export
+api_add_conforms_to <- function(api, conforms_to) {
+  current <- api_attr(api, "conforms_to")
+  if (!is.null(current)) {
+    conforms_to <- unique(c(current, conforms_to))
+  }
+  api_attr(api, "conforms_to") <- conforms_to
 }
 #' @keywords internal
 api_attr <- function(api, name) {
-  if (exists(name, envir = api_env(api), inherits = FALSE))
-    get(name, envir = api_env(api), inherits = FALSE)
+  api$get(name)
 }
 #' @keywords internal
 `api_attr<-` <- function(api, name, value) {
-  assign(name, value, envir = api_env(api), inherits = FALSE)
+  api$set(name, value)
   api
 }
 #' @keywords internal
@@ -153,6 +176,9 @@ setup_plumber_spec <- function(api, pr, spec_endpoint) {
       pr$getApiSpec()
     )
   }
+  api_add_conforms_to(
+    api, "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30"
+  )
   api_attr(api, "spec_endpoint") <- spec_endpoint
   plumber::pr_set_docs(pr, FALSE)
   plumber::pr_get(
@@ -165,20 +191,42 @@ setup_plumber_spec <- function(api, pr, spec_endpoint) {
 }
 #' @keywords internal
 setup_plumber_docs <- function(api, pr, docs_endpoint, spec_endpoint) {
+  # remove leading slash
+  spec_endpoint <- gsub("^/", "", spec_endpoint)
+
   docs_handler <- function(req, res, ...) {
-    swagger::swagger_spec(
+    html_lines <- swagger::swagger_spec(
       api_path = paste0(
         '"',
         make_url(get_host(api, req), spec_endpoint, ...),
         '"'
       )
     )
+    html_lines <- strsplit(html_lines, "\n")[[1]]
+    # Inject <base href="/docs/"> into the <head> section
+    head_index <- grep("<head.*?>", html_lines, ignore.case = TRUE)
+    if (length(head_index) > 0) {
+      html_lines <- append(
+        html_lines,
+        values = '  <base href="/docs/">',
+        after = head_index[1]
+      )
+    }
+    paste(html_lines, collapse = "\n")
   }
+
   api_attr(api, "docs_endpoint") <- docs_endpoint
   plumber::pr_static(
     pr = pr,
-    path = docs_endpoint,
+    path = paste0(docs_endpoint, "/"),
     direc = swagger::swagger_path()
+  )
+  plumber::pr_get(
+    pr = pr,
+    path = docs_endpoint,
+    handler = docs_handler,
+    serializer = plumber::serializer_html(),
+    tag = "API"
   )
   plumber::pr_get(
     pr = pr,
@@ -187,11 +235,49 @@ setup_plumber_docs <- function(api, pr, docs_endpoint, spec_endpoint) {
     serializer = plumber::serializer_html(),
     tag = "API"
   )
-  plumber::pr_get(
-    pr = pr,
-    path = paste0(docs_endpoint, "/"),
-    handler = docs_handler,
-    serializer = plumber::serializer_html(),
-    tag = "API"
+  # plumber::pr_static(
+  #   pr = pr,
+  #   path = docs_endpoint,
+  #   direc = swagger::swagger_path()
+  # )
+  # plumber::pr_get(
+  #   pr = pr,
+  #   path = paste0(docs_endpoint, "/index.html"),
+  #   handler = docs_handler,
+  #   serializer = plumber::serializer_html(),
+  #   tag = "API"
+  # )
+  # plumber::pr_get(
+  #   pr = pr,
+  #   path = paste0(docs_endpoint, "/"),
+  #   handler = docs_handler,
+  #   serializer = plumber::serializer_html(),
+  #   tag = "API"
+  # )
+}
+#' @keywords internal
+local_req <- function(path = "/", body = list()) {
+  req <- list(
+    REQUEST_METHOD = "GET",
+    HTTP_ACCESS_CONTROL_REQUEST_HEADERS = "*",
+    HTTP_HOST = "0.0.0.0",
+    HTTP_ACCEPT = "*/*",
+    SERVER_NAME = "0.0.0.0",
+    SERVER_PORT = "8080",
+    PATH_INFO = "",
+    HTTP_AUTHORIZATION = "0123456789",
+    rook.url_scheme = "http",
+    body = body
   )
+  req
+}
+#' @keywords internal
+map_collections <- function(doc, fn, ...) {
+  doc$collections <- lapply(doc$collections, fn, ...)
+  doc
+}
+#' @keywords internal
+map_features <- function(doc, fn, ...) {
+  doc$features <- lapply(doc$features, fn, ...)
+  doc
 }

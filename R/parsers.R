@@ -1,5 +1,6 @@
 #' @keywords internal
 parse_array <- function(x) {
+  if (!is.character(x)) return(x)
   strsplit(as.character(x), split = ",")[[1]]
 }
 #' @keywords internal

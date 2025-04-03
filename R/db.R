@@ -47,11 +47,16 @@ new_db <- function(driver, ...) {
   UseMethod("new_db", driver)
 }
 #' @keywords internal
+db_collections_id <- function(db, ids = NULL) {
+  UseMethod("db_collections_id", db)
+}
+#' @keywords internal
 db_collections_id_exist <- function(db, ids) {
   UseMethod("db_collections_id_exist", db)
 }
 #' @keywords internal
 db_collections <- function(db) {
+  # TODO: implement pagination limit
   UseMethod("db_collections", db)
 }
 #' @keywords internal

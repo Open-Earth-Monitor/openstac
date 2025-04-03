@@ -152,7 +152,7 @@ sfg_as_multi_linestring <- function(x) {
 sfg_as_polygon <- function(x) {
   list(
     type = geom_types[[5]],
-    coordinates = lapply(x, \(lr) apply(lr, 1, list, simplify = FALSE))
+    coordinates = lapply(x, \(lr) apply(lr, 1, c, simplify = FALSE))
   )
 }
 sfg_as_multi_polygon <- function(x) {
@@ -188,18 +188,6 @@ bbox_as_sfg <- function(bbox) {
   structure(
     list(structure(c(coords), dim = dim(coords))),
     class = c("XY", "POLYGON", "sfg")
-  )
-}
-bbox_as_sfc <- function(bbox) {
-  # TODO: check if sfc is needed
-  bbox <- as_sf_bbox(bbox)
-  structure(
-    list(bbox_as_sfg(bbox)),
-    class = c("sfc_POLYGON", "sfc"),
-    precision = 0,
-    bbox = bbox,
-    crs = load_crs("OGC:CRS84"),
-    n_empty = 0L
   )
 }
 bbox_as_geom <- function(bbox) {

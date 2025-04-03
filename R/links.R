@@ -42,7 +42,7 @@ update_link <- function(doc, rel, href, ...) {
   doc
 }
 #' @keywords internal
-make_url <- function(host, ...) {
+make_url <- function(host, ..., ignore_query = FALSE) {
   dots <- c(...)
   segments <- unname(dots)
   params <- NULL
@@ -51,10 +51,21 @@ make_url <- function(host, ...) {
     params <- dots[names(dots) != ""]
   }
   path <- paste0(segments, collapse = "/")
-  url <- paste0(host, path)
+  path <- sub("^/", "", path)
+  host <- sub("/$", "", host)
+  url <- paste0(host, "/", path)
   query <- paste(names(params), unname(params), sep = "=", collapse = "&")
-  if (query != "") url <- paste0(url, "?", query)
+  if (!ignore_query && query != "") url <- paste0(url, "?", query)
   url
+}
+#' @keywords internal
+make_body <- function(...) {
+  dots <- c(...)
+  body <- list()
+  if (!is.null(names(dots))) {
+    body <- as.list(dots[names(dots) != ""])
+  }
+  body
 }
 #' @keywords internal
 root_url <- function(api, req) {
@@ -86,64 +97,59 @@ link_self <- function(doc, api, req, type) {
 link_parent <- function(doc, api, req) {
   update_link(doc, "parent", parent_url(api, req), type = "application/json")
 }
-links_navigation <- function(doc,
-                             api,
-                             req,
-                             endpoint,
-                             limit,
-                             page, ...,
-                             type) {
+#' @keywords internal
+links_navigation <- function(doc, api, req, ..., limit, page, type) {
   host <- get_host(api, req)
   pages <- get_pages(doc, limit)
   if (page > 1 && page <= pages) {
-    url <- make_url(host, endpoint, limit = limit, page = page - 1, ...)
+    url <- make_url(host, ..., limit = limit, page = page - 1)
     doc <- update_link(doc, "prev", url, type = type)
   }
   if (page < pages) {
-    url <- make_url(host, endpoint, limit = limit, page = page + 1, ...)
+    url <- make_url(host, ..., limit = limit, page = page + 1)
     doc <- update_link(doc, "next", url, type = type)
   }
   doc
 }
+#' @keywords internal
 links_navigagion_post <- function(doc,
                                   api,
-                                  req,
-                                  endpoint,
+                                  req, ...,
                                   limit,
-                                  page, ...,
+                                  page,
                                   type,
                                   merge) {
   host <- get_host(api, req)
+  url <- make_url(host, ..., ignore_query = TRUE)
   pages <- get_pages(doc, limit)
-  if (page > 1 && page <= pages)
-    doc <- add_link(
+  if (page > 1 && page <= pages) {
+    doc <- update_link(
       doc = doc,
       rel = "prev",
-      href = make_url(host, endpoint),
-      body = list(
-        page = page - 1,
-        ...
-      ),
+      href = url,
+      body = make_body(page = page - 1, ...),
       merge = merge,
       type = type
     )
-  if (page < pages)
-    doc <- add_link(
+  }
+  if (page < pages) {
+    doc <- update_link(
       doc = doc,
       rel = "next",
-      href = make_url(host, endpoint),
-      body = list(
-        page = page + 1,
-        ...
-      ),
+      href = url,
+      body = make_body(page = page + 1, ...),
       merge = merge,
       type = type
     )
+  }
   doc
 }
+#' @keywords internal
 link_spec <- function(doc, api, req) {
   spec_endpoint <- api_attr(api, "spec_endpoint")
-  if (is.null(spec_endpoint)) return(doc)
+  if (is.null(spec_endpoint)) {
+    return(doc)
+  }
   url <- make_url(get_host(api, req), spec_endpoint)
   doc <- update_link(
     doc = doc,
@@ -154,9 +160,12 @@ link_spec <- function(doc, api, req) {
   )
   doc
 }
+#' @keywords internal
 link_docs <- function(doc, api, req) {
   docs_endpoint <- api_attr(api, "docs_endpoint")
-  if (is.null(docs_endpoint)) return(doc)
+  if (is.null(docs_endpoint)) {
+    return(doc)
+  }
   url <- make_url(get_host(api, req), docs_endpoint)
   doc <- update_link(
     doc = doc,
@@ -167,4 +176,3 @@ link_docs <- function(doc, api, req) {
   )
   doc
 }
-

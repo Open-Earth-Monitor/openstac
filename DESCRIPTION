@@ -17,14 +17,16 @@ Description:
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
-Depends: R (>= 3.5.0)
+RoxygenNote: 7.3.2
+Depends: R (>= 4.1.0)
 Imports: 
     jsonlite,
     plumber,
-    swagger
+    swagger,
+    sf
 Suggests:
-    rstac,
-    mongolite
+    mongolite,
+    testthat (>= 3.0.0)
 URL: https://github.com/Open-Earth-Monitor/openstac
 BugReports: https://github.com/Open-Earth-Monitor/openstac/issues
+Config/testthat/edition: 3

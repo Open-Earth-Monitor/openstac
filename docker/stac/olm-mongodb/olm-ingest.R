@@ -1,6 +1,6 @@
 library(mongolite)
 
-update_db <- function(db, collection) {
+update_db <- function(db, collection, overwrite) {
   if (!requireNamespace("rstac"))
     stop("Package rstac was not found. ",
          'Please, run `install.packages("rstac")` to install it.',
@@ -20,13 +20,15 @@ update_db <- function(db, collection) {
           coord[c(2, 1)]
         })
     }
-    items$bbox[c(1, 2)] <- pmax(items$bbox[c(1, 2)], c(-180, -90))
-    items$bbox[c(3, 4)] <- pmin(items$bbox[c(3, 4)], c(180, 90))
+    item$bbox[c(1, 2)] <- pmax(item$bbox[c(1, 2)], c(-180, -90))
+    item$bbox[c(3, 4)] <- pmin(item$bbox[c(3, 4)], c(180, 90))
     item$geometry$coordinates[[1]] <-
       lapply(item$geometry$coordinates[[1]], function(coord) {
         coord <- pmax(coord, c(-180, -90))
         coord <- pmin(coord, c(180, 90))
       })
+    # ... fix datetime
+    item$properties$datetime <- openstac:::mongo_datetime(openstac:::as_datetime(item$properties$datetime))
     # ... fix gsd
     if ("gsd" %in% names(item$properties))
       item$properties$gsd <- as.numeric(item$properties$gsd)
@@ -48,38 +50,44 @@ update_db <- function(db, collection) {
   items$links <- NULL
   # update db
   # ... call mongodb ingest functions <<<<<<<<<<<<<<
-  db$collections$insert(collection, auto_unbox = TRUE)
+  if (!openstac:::db_collections_id_exist(db, collection$id) || overwrite)
+    db$collections$update(
+      query = jsonlite::toJSON(collection, auto_unbox = TRUE, null = "list"),
+      upsert = TRUE
+    )
   for (item in items$features) {
-    db$items$insert(item, auto_unbox = TRUE)
+    if (!openstac:::db_items_id_exist(db, collection$id, item$id) || overwrite)
+      #print(item)
+      db$items$update(
+        query = jsonlite::toJSON(item, auto_unbox = TRUE, null = "list"),
+        upsert = TRUE
+      )
   }
-  db$collections$index(add = '{"id":1}')
-  db$items$index(add='{"collection":1,"id":1}')
-  db$items$index(add='{"geometry":"2dsphere"}')
+  #db$collections$run('{"dropDatabase": 1}')
 }
 
 create_db <- function(catalog_url, db_name, db_url, overwrite = FALSE) {
   rel <- NULL
   catalog <- rstac::read_stac(catalog_url)
   # prepare db
-  db <- list(
-    collections = mongolite::mongo(collection = "collections", db = db_name, url = db_url),
-    items = mongolite::mongo(collection = "items", db = db_name, url = db_url)
-  )
+  db <- openstac:::new_db("mongodb", db = db_name, url = db_url)
+  db$collections$run('{"createIndexes": "collections", "indexes":[{"key":{"id":1}, "name":"id_index", "unique": true}]}')
+  db$items$run('{"createIndexes": "items", "indexes":[{"key":{"collection":1, "id":1}, "name":"collection_id_index", "unique": true}]}')
+  db$items$index('{"geometry":"2dsphere"}')
   # filter collections
   links <- rstac::links(catalog, rel == "child")
-  for (link in links) {
-    print(link)
+  for (link in links[1]) {
+    #print(link)
     collection <- rstac::link_open(link)
     # skip if collections is already in db and overwrite is FALSE
-    if (collection$id %in% names(db$collections) && !overwrite) next
-    update_db(db, collection)
+    update_db(db, collection, overwrite)
   }
 }
 
 # OpenLandMap
 create_db(
   catalog_url = "https://s3.eu-central-1.wasabisys.com/stac/openlandmap/catalog.json",
-  db_name = "openlandmap",
-  db_url = "mongodb://0.0.0.0:27017",
+  db_name = "openlandmap3",
+  db_url = "mongodb://127.0.0.1:27017",
   overwrite = FALSE
 )
