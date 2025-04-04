@@ -95,8 +95,6 @@ api_search.stac <- function(api,
     limit <- parse_int(limit[[1]])
     check_limit(limit, min = 1, max = 10000)
   }
-  if (missing(bbox)) bbox <- NULL
-  if (missing(intersects)) intersects <- NULL
   api_stopifnot(
     is.null(bbox) || is.null(intersects),
     status = 400,
@@ -106,7 +104,6 @@ api_search.stac <- function(api,
     bbox <- parse_dbl(bbox)
     check_bbox(bbox)
   }
-  if (missing(datetime)) datetime <- NULL
   if (!is.null(datetime)) {
     datetime <- parse_datetime(datetime[[1]])
   }
@@ -119,10 +116,9 @@ api_search.stac <- function(api,
     intersects <- parse_geojson(intersects)
     check_intersects(intersects)
   }
-  if (missing(ids)) ids <- NULL
   if (!is.null(ids)) ids <- parse_str(ids)
   api_stopifnot(
-    !missing(collections),
+    !is.null(collections),
     status = 400,
     "collections parameter must be provided"
   )

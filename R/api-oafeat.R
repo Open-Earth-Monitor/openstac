@@ -108,12 +108,10 @@ api_items.oafeat <- function(api,
     limit <- parse_int(limit[[1]])
     check_limit(limit, min = 1, max = 10000)
   }
-  if (missing(bbox)) bbox <- NULL
   if (!is.null(bbox)) {
     bbox <- parse_dbl(bbox)
     check_bbox(bbox)
   }
-  if (missing(datetime)) datetime <- NULL
   if (!is.null(datetime)) {
     datetime <- parse_datetime(datetime[[1]])
   }
