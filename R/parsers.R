@@ -1,6 +1,11 @@
 #' @keywords internal
 parse_array <- function(x) {
-  if (!is.character(x)) return(x)
+  if (!is.character(x)) {
+    return(x)
+  }
+  if (length(x) > 1) {
+    return(x)
+  }
   strsplit(as.character(x), split = ",")[[1]]
 }
 #' @keywords internal
@@ -31,7 +36,9 @@ parse_datetime <- function(x) {
       check_rfc3339(x[[2]])
       end <- as.Date(x[[2]])
     }
-    if (is.null(start) && is.null(end)) return(NULL)
+    if (is.null(start) && is.null(end)) {
+      return(NULL)
+    }
   } else {
     return(NA)
   }
@@ -41,14 +48,17 @@ parse_datetime <- function(x) {
 #' @keywords internal
 parse_geojson <- function(x, ...) {
   # TODO: check for geometry conformity
-  tryCatch({
-    jsonlite::fromJSON(
-      txt = x,
-      simplifyVector = FALSE,
-      auto_unbox = TRUE,
-      ...
-    )
-  }, error = function(e) {
-    return(NA)
-  })
+  tryCatch(
+    {
+      jsonlite::fromJSON(
+        txt = x,
+        simplifyVector = FALSE,
+        auto_unbox = TRUE,
+        ...
+      )
+    },
+    error = function(e) {
+      return(NA)
+    }
+  )
 }

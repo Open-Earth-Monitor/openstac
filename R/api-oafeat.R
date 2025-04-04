@@ -103,8 +103,15 @@ api_items.oafeat <- function(api,
                              bbox,
                              datetime,
                              page, ...) {
+  # defaults
+  if (is.null(limit)) {
+    limit <- 10
+  }
+  if (is.null(page)) {
+    page <- 1
+  }
   # check parameters
-  if (!is.null(limit)) {
+  if (!is.integer(limit)) {
     limit <- parse_int(limit[[1]])
     check_limit(limit, min = 1, max = 10000)
   }
@@ -115,7 +122,7 @@ api_items.oafeat <- function(api,
   if (!is.null(datetime)) {
     datetime <- parse_datetime(datetime[[1]])
   }
-  if (!is.null(page)) {
+  if (!is.integer(page)) {
     page <- parse_int(page[[1]])
     check_page(page)
   }

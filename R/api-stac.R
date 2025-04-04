@@ -88,10 +88,17 @@ api_search.stac <- function(api,
                             ids,
                             collections,
                             page, ...) {
+  # defaults
+  if (is.null(limit)) {
+    limit <- 10
+  }
+  if (is.null(page)) {
+    page <- 1
+  }
   host <- get_host(api, req)
   method <- get_method(req)
   # check parameters
-  if (!is.null(limit)) {
+  if (!is.integer(limit)) {
     limit <- parse_int(limit[[1]])
     check_limit(limit, min = 1, max = 10000)
   }
@@ -100,23 +107,30 @@ api_search.stac <- function(api,
     status = 400,
     "only one of either intersects or bbox may be provided"
   )
-  if (!is.null(bbox)) {
+  if (!is.null(bbox) && !is.numeric(bbox)) {
     bbox <- parse_dbl(bbox)
     check_bbox(bbox)
   }
   if (!is.null(datetime)) {
+    api_stopifnot(
+      is.character(datetime),
+      status = 400,
+      "datetime must be a character"
+    )
     datetime <- parse_datetime(datetime[[1]])
   }
   if (!is.null(intersects)) {
     api_stopifnot(
       method == "POST",
       status = 405,
-      "the request method is not supported"
+      "the request method does not support intersects parameter"
     )
     intersects <- parse_geojson(intersects)
     check_intersects(intersects)
   }
-  if (!is.null(ids)) ids <- parse_str(ids)
+  if (!is.null(ids)) {
+    ids <- parse_str(ids)
+  }
   api_stopifnot(
     !is.null(collections),
     status = 400,
@@ -126,7 +140,7 @@ api_search.stac <- function(api,
     collections <- parse_str(collections)
     check_collections(collections)
   }
-  if (!is.null(page)) {
+  if (!is.integer(page)) {
     page <- parse_int(page[[1]])
     check_page(page)
   }
