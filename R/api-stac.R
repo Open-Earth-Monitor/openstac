@@ -159,7 +159,12 @@ api_search.stac <- function(api,
   )
   doc <- map_features(doc, \(item) {
     item <- link_root(item, api, req)
-    item <- link_self(item, api, req, "application/geo+json")
+    item <- update_link(
+      doc = item,
+      rel = "self",
+      href = make_url(host, "/collections", item$collection, "items", item$id),
+      type = "application/geo+json"
+    )
     item <- update_link(
       doc = item,
       rel = "collection",
@@ -169,7 +174,7 @@ api_search.stac <- function(api,
     item
   })
   doc <- link_root(doc, api, req)
-  doc <- link_self(doc, api, req, "application/geo+json")
+  doc <- link_self(doc, api, req, type = "application/geo+json")
   # add navigation links
   if (method == "GET") {
     doc <- links_navigation(
