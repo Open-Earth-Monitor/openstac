@@ -4,7 +4,7 @@ api_landing_page.oafeat <- function(api, req, res, ...) {
   host <- get_host(api, req)
   doc <- list(title = api$title(), description = api$description())
   doc <- link_root(doc, api, req)
-  doc <- link_self(doc, api, req, "application/json")
+  doc <- link_self(doc, api, req, type = "application/json")
   doc <- link_spec(doc, api, req)
   doc <- link_docs(doc, api, req)
   doc <- update_link(
@@ -55,19 +55,19 @@ api_collections.oafeat <- function(api, req, res, ...) {
     col <- update_link(
       doc = col,
       rel = "parent",
-      href = make_url(host, "/"),
+      href = make_url(host, "/"), # TODO: how to get a parent collection/catalog other than /?
       type = "application/json"
     )
     col <- update_link(
       doc = col,
-      rel = "item",
+      rel = "items",
       href = make_url(host, "/collections", escape_url(col$id), "items"),
       type = "application/geo+json"
     )
     col
   })
   doc <- link_root(doc, api, req)
-  doc <- link_self(doc, api, req, "application/json")
+  doc <- link_self(doc, api, req, type = "application/json")
   doc
 }
 #' @rdname api_handling
@@ -78,7 +78,7 @@ api_collection.oafeat <- function(api, req, res, collection_id, ...) {
   check_collection_in_db(db, collection_id)
   doc <- db_collection(db, collection_id)
   doc <- link_root(doc, api, req)
-  doc <- link_self(doc, api, req, "application/json")
+  doc <- link_self(doc, api, req, type = "application/json")
   doc <- update_link(
     doc = doc,
     rel = "parent",
@@ -87,7 +87,7 @@ api_collection.oafeat <- function(api, req, res, collection_id, ...) {
   )
   doc <- update_link(
     doc = doc,
-    rel = "item",
+    rel = "items",
     href = make_url(host, "/collections", escape_url(collection_id), "items"),
     type = "application/geo+json"
   )
@@ -103,8 +103,15 @@ api_items.oafeat <- function(api,
                              bbox,
                              datetime,
                              page, ...) {
+  # defaults
+  if (is.null(limit)) {
+    limit <- 10
+  }
+  if (is.null(page)) {
+    page <- 1
+  }
   # check parameters
-  if (!is.null(limit)) {
+  if (!is.integer(limit)) {
     limit <- parse_int(limit[[1]])
     check_limit(limit, min = 1, max = 10000)
   }
@@ -115,7 +122,7 @@ api_items.oafeat <- function(api,
   if (!is.null(datetime)) {
     datetime <- parse_datetime(datetime[[1]])
   }
-  if (!is.null(page)) {
+  if (!is.integer(page)) {
     page <- parse_int(page[[1]])
     check_page(page)
   }
@@ -131,11 +138,16 @@ api_items.oafeat <- function(api,
     page = page
   )
   doc <- link_root(doc, api, req)
-  doc <- link_self(doc, api, req, "application/geo+json")
+  doc <- link_self(doc, api, req, type = "application/geo+json")
   host <- get_host(api, req)
   doc <- map_features(doc, \(item) {
     item <- link_root(item, api, req)
-    item <- link_self(item, api, req, "application/geo+json")
+    item <- update_link(
+      doc = item,
+      rel = "self",
+      href = make_url(host, "/collections", item$collection, "items", item$id),
+      type = "application/geo+json"
+    )
     item <- update_link(
       doc = item,
       rel = "collection",
@@ -174,7 +186,7 @@ api_item.oafeat <- function(api, req, res, collection_id, item_id, ...) {
   check_item_in_db(db, collection_id, item_id)
   doc <- db_item(db, collection_id, item_id)
   doc <- link_root(doc, api, req)
-  doc <- link_self(doc, api, req, "application/geo+json")
+  doc <- link_self(doc, api, req, type = "application/geo+json")
   doc <- update_link(
     doc = doc,
     rel = "collection",
