@@ -30,7 +30,7 @@ NULL
 #' @rdname link_functions
 #' @export
 add_link <- function(doc, rel, href, ...) {
-  doc$links <- c(doc$links, list(new_link(rel, href, ...)))
+  doc$links <- c(doc$links, list(make_link(rel, href, ...)))
   doc
 }
 #' @rdname link_functions
@@ -38,8 +38,23 @@ add_link <- function(doc, rel, href, ...) {
 update_link <- function(doc, rel, href, ...) {
   select <- vapply(doc$links, \(x) !is.null(x$rel) && x$rel != rel, logical(1))
   doc$links <- doc$links[select]
-  doc$links <- c(doc$links, list(new_link(rel, href, ...)))
+  doc$links <- c(doc$links, list(make_link(rel, href, ...)))
   doc
+}
+#' @rdname link_functions
+#' @export
+root_url <- function(api, req) {
+  make_url(get_host(api, req), "/")
+}
+#' @rdname link_functions
+#' @export
+self_url <- function(api, req, ...) {
+  make_url(get_host(api, req), get_path(req), ...)
+}
+#' @rdname link_functions
+#' @export
+parent_url <- function(api, req) {
+  sub("((://)?[^/]+)/[^/]*$", "\\1", self_url(api, req))
 }
 #' @keywords internal
 make_url <- function(host, ..., ignore_query = FALSE) {
@@ -68,19 +83,7 @@ make_body <- function(...) {
   body
 }
 #' @keywords internal
-root_url <- function(api, req) {
-  make_url(get_host(api, req), "/")
-}
-#' @keywords internal
-self_url <- function(api, req) {
-  make_url(get_host(api, req), get_path(req))
-}
-#' @keywords internal
-parent_url <- function(api, req) {
-  sub("((://)?[^/]+)/[^/]*$", "\\1", self_url(api, req))
-}
-#' @keywords internal
-new_link <- function(rel, href, ...) {
+make_link <- function(rel, href, ...) {
   dots <- list(...)
   not_null <- !vapply(dots, is.null, logical(1), USE.NAMES = FALSE)
   c(list(rel = rel, href = href), dots[not_null])
@@ -90,8 +93,8 @@ link_root <- function(doc, api, req) {
   update_link(doc, "root", root_url(api, req), type = "application/json")
 }
 #' @keywords internal
-link_self <- function(doc, api, req, type) {
-  update_link(doc, "self", self_url(api, req), type = type)
+link_self <- function(doc, api, req, ..., type) {
+  update_link(doc, "self", self_url(api, req, ...), type = type)
 }
 #' @keywords internal
 link_parent <- function(doc, api, req) {
@@ -173,6 +176,18 @@ link_docs <- function(doc, api, req) {
     href = url,
     type = "text/html",
     title = "The API documentation"
+  )
+  doc
+}
+#' @keywords internal
+link_conformance <- function(doc, api, req) {
+  url <- make_url(get_host(api, req), "/conformance")
+  doc <- update_link(
+    doc = doc,
+    rel = "conformance",
+    href = url,
+    type = "application/json",
+    title = "API conformance classes implemented by this server"
   )
   doc
 }

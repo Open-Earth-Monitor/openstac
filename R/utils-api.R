@@ -114,34 +114,27 @@ api_stopifnot <- function(expr, status, ...) {
 #' @rdname api_helpers
 #' @export
 get_host <- function(api, req) {
-  host <- api_attr(api, "api_base_url")
-  if (is.null(host)) {
-    host <- ""
+  base_url <- api_attr(api, "api_base_url")
+  if (is_absolute_url(base_url)) {
+    return(base_url)
   }
-  if (is_absolute_url(host)) {
-    return(host)
+  if (!length(base_url)) {
+    base_url <- ""
   }
   if ("HTTP_HOST" %in% names(req)) {
-    return(paste0(req$rook.url_scheme, "://", req$HTTP_HOST, host))
+    base_url <- paste0(req$rook.url_scheme, "://", req$HTTP_HOST)
+    return(base_url)
   }
-  if (!is.null(req$SERVER_PORT) && nzchar(req$SERVER_PORT) &&
+  if (length(req$SERVER_PORT) && nzchar(req$SERVER_PORT) &&
     req$SERVER_PORT != "80") {
-    host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME, host)
-    host <- paste0(host, ":", req$SERVER_PORT, host)
-    return(host)
+    base_url <- paste0(
+      req$rook.url_scheme, "://", req$SERVER_NAME, ":", req$SERVER_PORT,
+      base_url
+    )
+    return(base_url)
   }
-  host <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME, host)
-  host
-}
-#' @rdname api_helpers
-#' @export
-get_path <- function(req) {
-  req$PATH_INFO
-}
-#' @rdname api_helpers
-#' @export
-get_method <- function(req) {
-  req$REQUEST_METHOD
+  base_url <- paste0(req$rook.url_scheme, "://", req$SERVER_NAME, base_url)
+  base_url
 }
 #' @rdname api_helpers
 #' @export
@@ -151,6 +144,18 @@ api_add_conforms_to <- function(api, conforms_to) {
     conforms_to <- unique(c(current, conforms_to))
   }
   api_attr(api, "conforms_to") <- conforms_to
+}
+#' @keywords internal
+get_path <- function(req) {
+  req$PATH_INFO
+}
+#' @keywords internal
+get_method <- function(req) {
+  req$REQUEST_METHOD
+}
+#' @keywords internal
+get_querystr <- function(req) {
+  req$QUERY_STRING
 }
 #' @keywords internal
 api_attr <- function(api, name) {
