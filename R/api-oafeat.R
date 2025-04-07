@@ -11,12 +11,14 @@ api_landing_page.oafeat <- function(api, req, res, ...) {
     doc = doc,
     rel = "conformance",
     href = make_url(host, "/conformance"),
+    title = "Conformance",
     type = "application/json"
   )
   doc <- update_link(
     doc = doc,
     rel = "data",
     href = make_url(host, "/collections"),
+    title = "Collections",
     type = "application/json"
   )
   db <- get_db(api)
@@ -26,7 +28,7 @@ api_landing_page.oafeat <- function(api, req, res, ...) {
       rel = "child",
       href = make_url(host, "/collections", escape_url(col$id)),
       type = "application/json",
-      title = col$title
+      title = col$title # Added title field
     )
   }))
   doc
@@ -56,12 +58,14 @@ api_collections.oafeat <- function(api, req, res, ...) {
       doc = col,
       rel = "parent",
       href = make_url(host, "/"), # TODO: how to get a parent collection/catalog other than /?
+      title = "Root",
       type = "application/json"
     )
     col <- update_link(
       doc = col,
       rel = "items",
       href = make_url(host, "/collections", escape_url(col$id), "items"),
+      title = "Items",
       type = "application/geo+json"
     )
     col
@@ -83,12 +87,14 @@ api_collection.oafeat <- function(api, req, res, collection_id, ...) {
     doc = doc,
     rel = "parent",
     href = make_url(host, "/"), # TODO: how to get a parent collection/catalog other than /?
+    title = "Parent",
     type = "application/geo+json"
   )
   doc <- update_link(
     doc = doc,
     rel = "items",
     href = make_url(host, "/collections", escape_url(collection_id), "items"),
+    title = "Items",
     type = "application/geo+json"
   )
   doc
@@ -146,12 +152,14 @@ api_items.oafeat <- function(api,
       doc = item,
       rel = "self",
       href = make_url(host, "/collections", item$collection, "items", item$id),
+      title = item$id, # Added title field
       type = "application/geo+json"
     )
     item <- update_link(
       doc = item,
       rel = "collection",
       href = make_url(host, "/collections", item$collection),
+      title = item$collection, # Added title field
       type = "application/json"
     )
     item
@@ -160,6 +168,7 @@ api_items.oafeat <- function(api,
     doc = doc,
     rel = "collection",
     href = make_url(host, "/collections", collection_id),
+    title = collection_id, # Added title field
     type = "application/json"
   )
   doc <- links_navigation(
