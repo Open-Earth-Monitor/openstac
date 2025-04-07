@@ -27,9 +27,6 @@ create_collections <- function(collections, ...) {
     class = c("doc_collections", "rstac_doc", "list")
   )
 }
-possibly <- function(expr) {
-  tryCatch(expr, error = function(e) NULL)
-}
 as_datetime <- function(datetime) {
   format(
     x = as.POSIXct(
@@ -50,4 +47,7 @@ as_datetime <- function(datetime) {
     format = "%Y-%m-%dT%H:%M:%OSZ",
     usetz = FALSE
   )
+}
+possibly <- function(expr) {
+  tryCatch(expr, error = function(e) NULL)
 }
