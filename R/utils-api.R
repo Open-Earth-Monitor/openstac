@@ -122,7 +122,7 @@ get_host <- function(api, req) {
     base_url <- ""
   }
   if ("HTTP_HOST" %in% names(req)) {
-    base_url <- paste0(req$rook.url_scheme, "://", req$HTTP_HOST)
+    base_url <- paste0(req$rook.url_scheme, "://", req$HTTP_HOST, base_url)
     return(base_url)
   }
   if (length(req$SERVER_PORT) && nzchar(req$SERVER_PORT) &&
